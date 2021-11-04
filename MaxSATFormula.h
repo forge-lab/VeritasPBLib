@@ -49,6 +49,7 @@ namespace openwbo {
 
 typedef std::map<std::string, int> nameMap;
 typedef std::map<int, std::string> indexMap;
+typedef std::map<int, int> varMap;
 
 class Soft {
 
@@ -78,21 +79,27 @@ public:
 class Hard {
   /*! The hard class is used to model the hard clauses in a MaxSAT formula. */
 public:
-  Hard(const vec<Lit> &hard) { hard.copyTo(clause); }
+  Hard(const vec<Lit> &hard, uint i = 0) { hard.copyTo(clause); id = i; }
 
   Hard() {}
   ~Hard() { clause.clear(); }
 
-  void print(){
+  void print(varMap v){
     assert (clause.size() > 0);
+    printf("clause %d: ",id);
     for (int i = 0; i < clause.size(); i++){
       if (sign(clause[i])) printf("-");
-      printf("%d ",var(clause[i])+1);
+      //printf("%d ",var(clause[i])+1);
+      varMap::const_iterator iter = v.find(var(clause[i]));
+      if (iter != v.end())
+        printf("%d ",iter->second);
+      else
+        printf("%d ",var(clause[i])+1);
     }
     printf("0\n");
   }
-
   vec<Lit> clause; //!< Hard clause
+  uint id; // !< Clause id
 };
 
 class MaxSATFormula {
@@ -105,6 +112,7 @@ public:
         max_soft_weight(0) {
     objective_function = NULL;
     format = _FORMAT_MAXSAT_;
+    id = 0;
   }
 
   ~MaxSATFormula() {
@@ -196,6 +204,10 @@ public:
 
   indexMap &getIndexToName() { return _indexToName; }
 
+  varMap &getVarMap() { return _varMap; }
+
+  void incId() { id++; }
+
 protected:
   // MaxSAT database
   //
@@ -223,6 +235,10 @@ protected:
   //
   nameMap _nameToIndex;  //<! Map from variable name to variable id.
   indexMap _indexToName; //<! Map from variable id to variable name.
+  varMap _varMap; //<! Map from variable id in CNF to variable id in PB.
+
+
+  uint id; // <! Id for the clauses
 
   // Format
   //

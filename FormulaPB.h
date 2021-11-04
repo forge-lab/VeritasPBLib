@@ -34,6 +34,8 @@
 #include "core/Solver.h"
 #endif
 
+#include "MaxTypes.h"
+
 using NSPACE::vec;
 using NSPACE::Lit;
 
@@ -43,42 +45,52 @@ namespace openwbo {
 class Card {
 
 public:
-  Card(vec<Lit> &lits, int64_t rhs, bool sign = false) {
+  Card(vec<Lit> &lits, int64_t rhs, pb_Sign sign = _PB_LESS_OR_EQUAL_, uint id = 0) {
     lits.copyTo(_lits);
     _rhs = rhs;
-    if (sign) {
-      int s = 0;
-      for (int i = 0; i < _lits.size(); i++) {
-        s += 1;
-        _lits[i] = ~_lits[i];
-      }
-      _rhs = s - _rhs;
-    }
+    _sign = sign;
+    _id = id;
+    // if (sign) {
+    //   int s = 0;
+    //   for (int i = 0; i < _lits.size(); i++) {
+    //     s += 1;
+    //     _lits[i] = ~_lits[i];
+    //   }
+    //   _rhs = s - _rhs;
+    // }
   }
 
   Card() { _rhs = 0; }
   ~Card() {}
 
   void print() {
-    printf("* Card: ");
+    printf("* Card[%d]: ",_id);
 
     for (int i = 0; i < _lits.size(); i++) {
       if (sign(_lits[i]))
         printf("~");
       printf("%d ", var(_lits[i]) + 1);
     }
-    printf(" <= %d\n", (int)_rhs);
-  }
+    if (_sign == _PB_EQUAL_)
+      printf(" = %d\n", (int)_rhs);
+    else if (_sign == _PB_GREATER_OR_EQUAL_)
+      printf(" >= %d\n", (int)_rhs);
+    else if (_sign == _PB_LESS_OR_EQUAL_)
+      printf(" <= %d\n", (int)_rhs);
+    else assert(false);
+ }
 
   vec<Lit> _lits;
   int64_t _rhs;
+  pb_Sign _sign;
+  uint _id;
 };
 
 // PB constraint. The constraint sign is encoded in the structure.
 class PB {
 
 public:
-  PB(vec<Lit> &lits, vec<uint64_t> &coeffs, int64_t rhs, bool s = false) {
+  PB(vec<Lit> &lits, vec<uint64_t> &coeffs, int64_t rhs, pb_Sign s = _PB_LESS_OR_EQUAL_) {
     lits.copyTo(_lits);
     coeffs.copyTo(_coeffs);
     _rhs = rhs;
@@ -87,7 +99,7 @@ public:
 
   PB() {
     _rhs = 0;
-    _sign = false;
+    _sign = _PB_LESS_OR_EQUAL_;
   }
   ~PB() {}
 
@@ -106,48 +118,62 @@ public:
 
   void addRHS(int64_t rhs) { _rhs += rhs; }
 
-  void changeSign() {
-    int s = 0;
-    for (int i = 0; i < _coeffs.size(); i++) {
-      s += _coeffs[i];
-      _lits[i] = ~(_lits[i]);
-    }
-    _rhs = s - _rhs;
-    _sign = !(_sign);
-  }
+  // void changeSign() {
+  //   int s = 0;
+  //   for (int i = 0; i < _coeffs.size(); i++) {
+  //     s += _coeffs[i];
+  //     _lits[i] = ~(_lits[i]);
+  //   }
+  //   _rhs = s - _rhs;
+  //   _sign = !(_sign);
+  // }
 
   bool isClause() {
+    // unit clauses
+    if (_sign == _PB_EQUAL_){
+      if (_coeffs.size() != 1) return false;
+    } else if (_sign == _PB_GREATER_OR_EQUAL_){
+      for (int i = 0; i < _coeffs.size(); i++){
+        if (_coeffs[i] != 1) return false;
+      }        
+    } else if (_sign == _PB_LESS_OR_EQUAL_){
+      // TODO: support <= for clause detection
+      printf("c Error: PB constraint should be normalized to only include = and >=.\n");
+      printf("s UNKNOWN\n");
+      exit(_ERROR_);
+    }
+
     // Assume _sign == false...
-    bool sign = _sign;
-    if (_sign)
-      changeSign();
-    if (_rhs != 1) {
-      if (_sign != sign)
-        changeSign();
-      return false;
-    }
-    for (int i = 0; i < _coeffs.size(); i++) {
-      if (_coeffs[i] != 1) {
-        if (_sign != sign)
-          changeSign();
-        return false;
-      }
-    }
+    // bool sign = _sign;
+    // if (_sign)
+    //   changeSign();
+    // if (_rhs != 1) {
+    //   if (_sign != sign)
+    //     changeSign();
+    //   return false;
+    // }
+    // for (int i = 0; i < _coeffs.size(); i++) {
+    //   if (_coeffs[i] != 1) {
+    //     if (_sign != sign)
+    //       changeSign();
+    //     return false;
+    //   }
+    // }
     return true;
   }
 
   bool isCardinality() {
-    // Assume _sign == false...
-    bool sign = _sign;
-    if (_sign)
-      changeSign();
-    for (int i = 0; i < _coeffs.size(); i++) {
-      if (_coeffs[i] != 1) {
-        if (_sign != sign)
-          changeSign();
-        return false;
-      }
-    }
+    // // Assume _sign == false...
+    // bool sign = _sign;
+    // if (_sign)
+    //   changeSign();
+    // for (int i = 0; i < _coeffs.size(); i++) {
+    //   if (_coeffs[i] != 1) {
+    //     if (_sign != sign)
+    //       changeSign();
+    //     return false;
+    //   }
+    // }
     return true;
   }
 
@@ -172,7 +198,8 @@ public:
   vec<uint64_t> _coeffs;
   vec<Lit> _lits;
   int64_t _rhs;
-  bool _sign; // atLeast: false; atMost: true
+  //bool _sign; // atLeast: false; atMost: true
+  pb_Sign _sign;
 };
 
 class PBObjFunction {

@@ -51,6 +51,7 @@
 #include "MaxTypes.h"
 #include "ParserMaxSAT.h"
 #include "ParserPB.h"
+#include "encodings/Encodings.h"
 
 #define VER1_(x) #x
 #define VER_(x) VER1_(x)
@@ -263,17 +264,22 @@ int main(int argc, char **argv) {
     printf("c |                                                                "
            "                                       |\n");
 
+
+   Encodings * encoder = new Encodings();
    
-   for(int i = 0; i < maxsat_formula->nHard(); i++){
-     Hard &hard = maxsat_formula->getHardClause(i);
-     hard.print();
-   }
-
-
    for(int i = 0; i < maxsat_formula->nCard(); i++){
         Card * card = maxsat_formula->getCardinalityConstraint(i);
-        card->print();
+        //card->print();
+        encoder->encode(card, maxsat_formula);
     }
+
+    printf("p cnf %d %d\n",maxsat_formula->nVars(),maxsat_formula->nHard());
+
+    for(int i = 0; i < maxsat_formula->nHard(); i++){
+     Hard &hard = maxsat_formula->getHardClause(i);
+     hard.print(maxsat_formula->getVarMap());
+   }
+
 
    exit(1);
 

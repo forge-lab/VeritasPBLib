@@ -1,9 +1,11 @@
 /*!
+ * \author Ruben Martins - rubenm@andrew.cmu.edu
  * \author Vasco Manquinho - vmm@sat.inesc-id.pt
  *
  * @section LICENSE
  *
- * Open-WBO, Copyright (c) 2013-2017, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
+ * Open-WBO, Copyright (c) 2013-2021, Ruben Martins, Vasco Manquinho, Ines Lynce
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -106,10 +108,6 @@ int ParserPB::parseLine() {
   skip_spaces();
   char c = peek_char();
 
-  // int size = strlen(_fileStr);
-  // if (size < 100) printf("%s\n", _fileStr);
-  // printf("c Parsing line #%d %d\n", nLine++, strlen(_fileStr));
-
   if (c == '*' || c == '\0' || c == 10 || c == '\n') {
     // Line is empty or end of line...
     readUntilEndOfLine();
@@ -134,12 +132,8 @@ int ParserPB::parseCostFunction() {
   static char word[MAX_WORD_LENGTH];
   int i;
 
-  // printf("c Parsing objective function...\n");
-
   parseWord(word, &i);
 
-  // if (strncmp("max:", word, 4) == 0)
-  // objective = _PB_MAX_;
   // Currently only supports min functions
   if (strncmp("min:", word, 4) != 0) {
     // Not a valid cost function
@@ -151,7 +145,6 @@ int ParserPB::parseCostFunction() {
   int64_t coeff;
   char varName[MAX_WORD_LENGTH], c;
   int varNameSize;
-  // int64_t coeffSum = 0;
   PBObjFunction *of = new PBObjFunction();
 
   skip_spaces();
@@ -168,8 +161,6 @@ int ParserPB::parseCostFunction() {
 
     int varID = getVariableID(varName, varNameSize);
 
-    // cout << "c CF Product: " << coeff << " " << varName << " "
-    // 	 << varNameSize << " " << varID << endl;
     of->addProduct(mkLit(varID), coeff);
 
     skip_spaces();
@@ -234,17 +225,12 @@ int ParserPB::parseConstraint() {
   int varNameSize;
   PB *p = new PB();
 
-  // printf("c Parsing Constraint...\n");
-
   // Read all products
   do {
     parseProduct(&coeff, varName, &varNameSize);
     int varID = getVariableID(varName, varNameSize);
 
     p->addProduct(mkLit(varID), coeff);
-
-    // cout << coeff << " " << varName << " " << " [ " << varID << " ] " <<
-    // endl;
 
     skip_spaces();
     c = peek_char();
@@ -261,11 +247,14 @@ int ParserPB::parseConstraint() {
 
   // Read constraint sign
   pb_Sign ctrSign = _PB_GREATER_OR_EQUAL_;
-  if (c == '=')
+  p->_sign = _PB_GREATER_OR_EQUAL_;
+  if (c == '='){
     ctrSign = _PB_EQUAL_;
-  else if (c == '<') {
+    p->_sign = _PB_EQUAL_;
+  } else if (c == '<') {
     ctrSign = _PB_LESS_OR_EQUAL_;
-    p->_sign = true;
+    //p->_sign = true;
+    p->_sign = _PB_LESS_OR_EQUAL_;
   }
 
   get_char();
@@ -284,20 +273,21 @@ int ParserPB::parseConstraint() {
   // int64_t rhs;
   parseNumber(&coeff);
   p->addRHS(coeff);
-  if (ctrSign == _PB_LESS_OR_EQUAL_) {
-    p->changeSign();
-  }
+  // if (ctrSign == _PB_LESS_OR_EQUAL_) {
+  //   p->changeSign();
+  // }
 
   readUntilEndOfLine();
+  maxsat_formula->addPBConstraint(p);
 
-  if (ctrSign == _PB_EQUAL_) {
-    PB *p2 = new PB(p->_lits, p->_coeffs, p->_rhs, true);
-    assert(p->_sign == false);
-    maxsat_formula->addPBConstraint(p);
-    maxsat_formula->addPBConstraint(p2);
-    delete p2;
-  } else
-    maxsat_formula->addPBConstraint(p);
+  // if (ctrSign == _PB_EQUAL_) {
+  //   PB *p2 = new PB(p->_lits, p->_coeffs, p->_rhs, true);
+  //   assert(p->_sign == false);
+  //   maxsat_formula->addPBConstraint(p);
+  //   maxsat_formula->addPBConstraint(p2);
+  //   delete p2;
+  // } else
+  //   maxsat_formula->addPBConstraint(p);
 
   delete p;
 

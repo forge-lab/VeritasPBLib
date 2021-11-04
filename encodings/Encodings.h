@@ -51,7 +51,9 @@ namespace openwbo {
 class Encodings {
 
 public:
-  Encodings() {}
+  Encodings(cardinality cardinality_type = _CARD_SEQUENTIAL_) {
+    _cardinality_type = cardinality_type;
+  }
   ~Encodings() {}
 
   // Auxiliary methods for creating clauses
@@ -60,9 +62,11 @@ public:
   void addBinaryClause(MaxSATFormula * mx, Lit a, Lit b);
   void addTernaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c);
   void addQuaternaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c, Lit d);
+  void encode(Card *card, MaxSATFormula *maxsat_formula);
 
 protected:
   vec<Lit> clause; // Temporary clause to be used while building the encodings.
+  cardinality _cardinality_type;
   
 };
 } // namespace openwbo

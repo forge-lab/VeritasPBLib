@@ -1,9 +1,10 @@
 /*!
- * \author Ruben Martins - ruben@sat.inesc-id.pt
+ * \author Ruben Martins - rubenm@andrew.cmu.edu
  *
  * @section LICENSE
  *
- * Open-WBO, Copyright (c) 2013-2017, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
+ * Open-WBO, Copyright (c) 2013-2021, Ruben Martins, Vasco Manquinho, Ines Lynce
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -71,10 +72,14 @@ enum {
   _INCREMENTAL_WEAKENING_,
   _INCREMENTAL_ITERATIVE_
 };
-enum { _CARD_SEQUENTIAL_ = 0 };
+enum cardinality { _CARD_SEQUENTIAL_ = 0 };
 enum { _AMO_LADDER_ = 0 };
 enum { _PB_SWC_ = 0, _PB_GTE_, _PB_ADDER_ };
 enum { _PART_SEQUENTIAL_ = 0, _PART_SEQUENTIAL_SORTED_, _PART_BINARY_ };
+
+/*! Definition of possible constraint signs. */
+enum pb_Sign { _PB_GREATER_OR_EQUAL_ = 0x1, _PB_LESS_OR_EQUAL_, _PB_EQUAL_ };
+
 
 }
 #endif

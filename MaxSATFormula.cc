@@ -59,7 +59,7 @@ void MaxSATFormula::addHardClause(vec<Lit> &lits) {
   hard_clauses.push();
   vec<Lit> copy_lits;
   lits.copyTo(copy_lits);
-  new (&hard_clauses[hard_clauses.size() - 1]) Hard(copy_lits);
+  new (&hard_clauses[hard_clauses.size() - 1]) Hard(copy_lits, id);
   n_hard++;
 }
 
@@ -160,21 +160,31 @@ Hard &MaxSATFormula::getHardClause(int pos) {
 void MaxSATFormula::addPBConstraint(PB *p) {
 
   // Add constraint to formula data structure.
+  id++; // updates the current if of the constraint
   if (p->isClause()) {
-    addHardClause(p->_lits);
+    if (p->_sign == _PB_EQUAL_){
+      assert (p->_lits.size() == 1);
+      vec<Lit> unit;
+      if (p->_rhs == 0) unit.push(~p->_lits[0]);
+      else if (p->_rhs == 1) unit.push(p->_lits[0]);
+      else assert(false);
+      addHardClause(unit);
+    } else addHardClause(p->_lits);
   } else if (p->isCardinality()) {
-    if (!p->_sign) {
-      p->changeSign();
-    }
-    cardinality_constraints.push(new Card(p->_lits, p->_rhs));
+    
+    cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
 
   } else {
-    if (!p->_sign) {
-      p->changeSign();
-    }
+    // if (!p->_sign) {
+    //   p->changeSign();
+    // }
+
+    // TODO: support PB constraints
+    assert(false);
 
     pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign));
   }
+
 }
 
 int MaxSATFormula::newVarName(char *varName) {
@@ -187,6 +197,13 @@ int MaxSATFormula::newVarName(char *varName) {
     std::pair<int, std::string> ni(id, s);
     _nameToIndex.insert(nv);
     _indexToName.insert(ni);
+    // parse xi variable from PB files
+    // only works if the variables are of that kind
+    assert (s[0] == 'x');
+    std::string varId = s.substr (1,s.size());
+    std::pair<int, int> vi(id, atoi(varId.c_str()));
+    _varMap.insert(vi);
+
   }
   return id;
 }

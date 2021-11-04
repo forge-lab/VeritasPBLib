@@ -39,6 +39,7 @@
 #include <string.h>
 
 #include "MaxSATFormula.h"
+#include "MaxTypes.h"
 
 using NSPACE::vec;
 using std::cout;
@@ -51,8 +52,6 @@ using std::endl;
 #define _PB_MAX_ 0
 #endif
 
-/*! Definition of possible constraint signs. */
-enum pb_Sign { _PB_GREATER_OR_EQUAL_ = 0x1, _PB_LESS_OR_EQUAL_, _PB_EQUAL_ };
 
 namespace openwbo {
 

@@ -26,14 +26,23 @@
  */
 
 #include "Encodings.h"
+#include "Enc_Sequential.h"
 
 using namespace openwbo;
+
+void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula){
+  if (_cardinality_type == _CARD_SEQUENTIAL_) {
+    Sequential * seq = new Sequential();
+    seq->encode(card, maxsat_formula);
+  } else assert(false);
+}
 
 void Encodings::addUnitClause(MaxSATFormula * mx, Lit a) {
   assert(clause.size() == 0);
   assert(a != lit_Undef);
   assert(var(a) < mx->nVars());
   clause.push(a);
+  mx->incId();
   mx->addHardClause(clause);
   clause.clear();
 }
@@ -44,6 +53,7 @@ void Encodings::addBinaryClause(MaxSATFormula * mx, Lit a, Lit b) {
   assert(var(a) < mx->nVars() && var(b) < mx->nVars());
   clause.push(a);
   clause.push(b);
+  mx->incId();
   mx->addHardClause(clause);
   clause.clear();
 }
@@ -55,6 +65,7 @@ void Encodings::addTernaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c) {
   clause.push(a);
   clause.push(b);
   clause.push(c);
+  mx->incId();
   mx->addHardClause(clause);
   clause.clear();
 }
@@ -69,6 +80,7 @@ void Encodings::addQuaternaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c, Lit
   clause.push(b);
   clause.push(c);
   clause.push(d);
+  mx->incId();
   mx->addHardClause(clause);
   clause.clear();
 }
