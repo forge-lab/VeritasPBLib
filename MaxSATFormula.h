@@ -39,6 +39,7 @@
 
 #include <map>
 #include <string>
+#include <fstream>
 
 using NSPACE::vec;
 using NSPACE::Lit;
@@ -84,19 +85,19 @@ public:
   Hard() {}
   ~Hard() { clause.clear(); }
 
-  void print(varMap v){
+  std::string print(varMap v){
+    std::stringstream ss;
     assert (clause.size() > 0);
-    printf("clause %d: ",id);
     for (int i = 0; i < clause.size(); i++){
-      if (sign(clause[i])) printf("-");
-      //printf("%d ",var(clause[i])+1);
+      if (sign(clause[i])) ss << "-";
       varMap::const_iterator iter = v.find(var(clause[i]));
       if (iter != v.end())
-        printf("%d ",iter->second);
+        ss << iter->second << " ";
       else
-        printf("%d ",var(clause[i])+1);
+        ss << (var(clause[i])+1) << " ";
     }
-    printf("0\n");
+    ss << "0";
+    return ss.str();
   }
   vec<Lit> clause; //!< Hard clause
   uint id; // !< Clause id
@@ -208,11 +209,17 @@ public:
 
   void incId() { id++; }
 
+  void printCNFtoFile(std::string filename);
+  void printPBPtoFile(std::string filename); 
+
 protected:
   // MaxSAT database
   //
   vec<Soft> soft_clauses; //<! Stores the soft clauses of the MaxSAT formula.
   vec<Hard> hard_clauses; //<! Stores the hard clauses of the MaxSAT formula.
+
+  // TODO: create a class instead of using strings
+  vec<std::string> proof_clauses; //<! Stores the proof expressions of the PB conversion
 
   // PB database
   //

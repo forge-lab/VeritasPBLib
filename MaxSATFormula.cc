@@ -239,3 +239,21 @@ void MaxSATFormula::convertPBtoMaxSAT() {
   else
     setProblemType(_WEIGHTED_);
 }
+
+
+void MaxSATFormula::printCNFtoFile(std::string filename){
+
+  std::ofstream file;
+  file.open(filename + ".cnf");
+  file << "p cnf " << nVars() << " " << nHard() << "\n";
+
+    for(int i = 0; i < nHard(); i++){
+     Hard &hard = getHardClause(i);
+     file << hard.print(getVarMap()) << "\n";
+   }
+  
+}
+
+void MaxSATFormula::printPBPtoFile(std::string filename){
+
+}

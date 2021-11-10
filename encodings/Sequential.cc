@@ -3,7 +3,7 @@
  *
  * @section LICENSE
  *
- * VeriPBLib, Copyright (c) 2021, Ruben Martins
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,21 @@
  *
  */
 
-#include "Enc_Sequential.h"
+#include "Sequential.h"
 
 using namespace openwbo;
 
 void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula){
+
+  card->print();
+
+  if (card->_sign != _PB_GREATER_OR_EQUAL_){
+    // TODO: consider the other cases
+    printf("c Only >= constraints are currently implemented.\n");
+    exit(1);
+  }
+
+  // TODO: check if <= or >= encoding should be used depending on rhs or n-rhs
 
 
 // s_{1,1} -y1 0
@@ -52,9 +62,11 @@ void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula){
 
   // Create auxiliary variables.
   int n = card->_lits.size();
+  // For >= constraints, we only need to sum up to k
   vec<Lit> *seq_auxiliary = new vec<Lit>[n + 1];
-  for (int i = 0; i < n + 1; i++)
-    seq_auxiliary[i].growTo(card->_rhs + 1);
+  for (int i = 0; i < n + 1; i++){
+      seq_auxiliary[i].growTo(card->_rhs + 1);
+  }
 
   for (int i = 1; i <= n; ++i) {
     for (int j = 1; j <= (int)(card->_rhs); ++j) {
@@ -87,10 +99,6 @@ void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula){
       addBinaryClause(maxsat_formula, ~seq_auxiliary[i - 1][(int)(card->_rhs) + 1 - (int)wi],
                       ~card->_lits[i - 1]);
     }
-  }
-
-  if (card->_sign == _PB_EQUAL_){
-
   }
 
 }
