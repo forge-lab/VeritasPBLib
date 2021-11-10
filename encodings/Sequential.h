@@ -48,6 +48,9 @@ public:
 
   void encode(Card *card, MaxSATFormula *maxsat_formula);
 
+private:
+  void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
+
 };
 } // namespace openwbo
 

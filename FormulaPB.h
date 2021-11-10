@@ -133,9 +133,12 @@ public:
     if (_sign == _PB_EQUAL_){
       if (_coeffs.size() != 1) return false;
     } else if (_sign == _PB_GREATER_OR_EQUAL_){
+      int rhs = 1;
       for (int i = 0; i < _coeffs.size(); i++){
-        if (_coeffs[i] != 1) return false;
-      }        
+        if (_coeffs[i] != 1 && _coeffs[i] != -1) return false;
+        if (_coeffs[i] == -1) rhs--;
+      }
+      if (rhs != _rhs) return false;        
     } else if (_sign == _PB_LESS_OR_EQUAL_){
       // TODO: support <= for clause detection
       printf("c Error: PB constraint should be normalized to only include = and >=.\n");
