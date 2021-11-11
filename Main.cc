@@ -140,7 +140,27 @@ int main(int argc, char **argv) {
            "                                       |\n");
 
 
-   Encodings * encoder = new Encodings();
+    pb_Cardinality card;
+
+    switch(cardinality){
+       case 0: 
+         card = _CARD_SEQUENTIAL_;
+         printf("c Cardinality encoding: sequential\n");
+         break;
+       case 1:
+         card = _CARD_TOTALIZER_;
+         printf("c Cardinality encoding: totalizer\n");
+         break;
+       case 2:
+         card = _CARD_ADDER_;
+         printf("c Cardinality encoding: adder\n");
+         break;
+       default:
+         assert(false);
+    }
+
+   
+   Encodings * encoder = new Encodings(card);
 
 
    for(int i = 0; i < maxsat_formula->nCard(); i++){

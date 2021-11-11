@@ -25,45 +25,37 @@
  *
  */
 
-#ifndef Encodings_h
-#define Encodings_h
+#ifndef Totalizer_h
+#define Totalizer_h
 
 #include "core/Solver.h"
 
-#include "../MaxTypes.h"
+#include "Encodings.h"
 #include "core/SolverTypes.h"
-#include "../MaxSATFormula.h"
-
-using NSPACE::vec;
-using NSPACE::Lit;
-using NSPACE::mkLit;
-using NSPACE::lit_Error;
-using NSPACE::lit_Undef;
-using NSPACE::Solver;
 
 namespace openwbo {
 
-//=================================================================================================
-class Encodings {
+class Totalizer : public Encodings {
 
 public:
-  Encodings(pb_Cardinality cardinality_type = _CARD_SEQUENTIAL_) {
-    _cardinality_type = cardinality_type;
+  Totalizer() {
   }
-  ~Encodings() {}
+  ~Totalizer() {}
 
-  // Auxiliary methods for creating clauses
-  //
-  void addUnitClause(MaxSATFormula * mx, Lit a);
-  void addBinaryClause(MaxSATFormula * mx, Lit a, Lit b);
-  void addTernaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c);
-  void addQuaternaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c, Lit d);
   void encode(Card *card, MaxSATFormula *maxsat_formula);
 
-protected:
-  vec<Lit> clause; // Temporary clause to be used while building the encodings.
-  pb_Cardinality _cardinality_type;
-  
+private:
+  void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
+  void adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right, vec<Lit> &output);
+  void toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits);
+  int _rhs;
+  vec<Lit> cardinality_inlits; // Stores the inputs of the cardinality
+                               // constraint encoding for the totalizer encoding
+  vec<Lit> cardinality_outlits; // Stores the outputs of the cardinality
+                                // constraint encoding for incremental solving
+
+
+
 };
 } // namespace openwbo
 

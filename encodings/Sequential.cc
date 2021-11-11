@@ -55,6 +55,16 @@ void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign)
       rhs = s - rhs;
   }
 
+  // simplifications
+  // all literals must be assigned to 0
+  if (rhs == 0){
+    for (int i = 0; i < lits.size(); i++){
+      addUnitClause(maxsat_formula, ~lits[i]);
+    }
+    return;
+  }
+
+
   // <= encoding needs to count rhs+1
   rhs = rhs +1;
 
@@ -102,8 +112,6 @@ void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign)
 }
 
 void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula){
-
-    card->print();
 
     switch (card->_sign){
       case _PB_EQUAL_:

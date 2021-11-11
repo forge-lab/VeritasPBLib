@@ -90,7 +90,7 @@ public:
 class PB {
 
 public:
-  PB(vec<Lit> &lits, vec<uint64_t> &coeffs, int64_t rhs, pb_Sign s = _PB_LESS_OR_EQUAL_) {
+  PB(vec<Lit> &lits, vec<int64_t> &coeffs, int64_t rhs, pb_Sign s = _PB_LESS_OR_EQUAL_) {
     lits.copyTo(_lits);
     coeffs.copyTo(_coeffs);
     _rhs = rhs;
@@ -198,7 +198,7 @@ public:
     printf(" >= %d\n", (int)_rhs);
   }
 
-  vec<uint64_t> _coeffs;
+  vec<int64_t> _coeffs;
   vec<Lit> _lits;
   int64_t _rhs;
   //bool _sign; // atLeast: false; atMost: true
@@ -208,7 +208,7 @@ public:
 class PBObjFunction {
 
 public:
-  PBObjFunction(vec<Lit> &lits, vec<uint64_t> &coeffs, int64_t c = 0) {
+  PBObjFunction(vec<Lit> &lits, vec<int64_t> &coeffs, int64_t c = 0) {
     lits.copyTo(_lits);
     coeffs.copyTo(_coeffs);
     _const = c;
@@ -230,7 +230,7 @@ public:
     }
   }
 
-  vec<uint64_t> _coeffs;
+  vec<int64_t> _coeffs;
   vec<Lit> _lits;
   int64_t _const;
 };

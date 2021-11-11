@@ -3,7 +3,7 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,13 +27,20 @@
 
 #include "Encodings.h"
 #include "Sequential.h"
+#include "Totalizer.h"
 
 using namespace openwbo;
 
 void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula){
-  if (_cardinality_type == _CARD_SEQUENTIAL_) {
+
+  if( _cardinality_type == _CARD_SEQUENTIAL_){ 
     Sequential * seq = new Sequential();
     seq->encode(card, maxsat_formula);
+  } else if (_cardinality_type == _CARD_TOTALIZER_){
+    Totalizer * tot = new Totalizer();
+    tot->encode(card, maxsat_formula);
+  } else if (_cardinality_type == _CARD_ADDER_){
+    assert(false);
   } else assert(false);
 }
 
