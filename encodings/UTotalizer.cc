@@ -3,7 +3,7 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,11 @@
  *
  */
 
-#include "Totalizer.h"
+#include "UTotalizer.h"
 
 using namespace openwbo;
 
-void Totalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right,
+void UTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right,
                       vec<Lit> &output) {
   assert(output.size() == left.size() + right.size());
   // We only need to count the sums up to k.
@@ -52,7 +52,7 @@ void Totalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &r
   }
 }
 
-void Totalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits){
+void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits){
   vec<Lit> left;
   vec<Lit> right;
 
@@ -94,7 +94,7 @@ void Totalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits){
   adder(maxsat_formula, left, right, lits);
 }
 
-void Totalizer::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
+void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
   assert (sign != _PB_EQUAL_);
 
   vec<Lit> lits;
@@ -144,7 +144,7 @@ void Totalizer::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
 
 }
 
-void Totalizer::encode(Card *card, MaxSATFormula *maxsat_formula){
+void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula){
 
     switch (card->_sign){
       case _PB_EQUAL_:

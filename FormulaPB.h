@@ -170,13 +170,11 @@ public:
     // bool sign = _sign;
     // if (_sign)
     //   changeSign();
-    // for (int i = 0; i < _coeffs.size(); i++) {
-    //   if (_coeffs[i] != 1) {
-    //     if (_sign != sign)
-    //       changeSign();
-    //     return false;
-    //   }
-    // }
+    for (int i = 0; i < _coeffs.size(); i++) {
+      if (_coeffs[i] != 1) {
+        return false;
+      }
+    }
     return true;
   }
 

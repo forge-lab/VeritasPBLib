@@ -3,7 +3,7 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,21 +26,34 @@
  */
 
 #include "Encodings.h"
-#include "Sequential.h"
-#include "Totalizer.h"
+#include "USequential.h"
+#include "UTotalizer.h"
+#include "UAdder.h"
 
 using namespace openwbo;
 
 void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula){
 
   if( _cardinality_type == _CARD_SEQUENTIAL_){ 
-    Sequential * seq = new Sequential();
+    USequential * seq = new USequential();
     seq->encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_TOTALIZER_){
-    Totalizer * tot = new Totalizer();
+    UTotalizer * tot = new UTotalizer();
     tot->encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_ADDER_){
     assert(false);
+  } else assert(false);
+}
+
+void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula){
+
+  if( _pb_type == _PB_SWC_){ 
+    assert(false);
+  } else if (_pb_type == _PB_GTE_){
+    assert(false);
+  } else if (_pb_type == _PB_ADDER_){
+    UAdder * add = new UAdder();
+    add->encode(pb, maxsat_formula);
   } else assert(false);
 }
 
@@ -77,7 +90,6 @@ void Encodings::addTernaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c) {
   clause.clear();
 }
 
-// Creates a quaternary clause in the SAT solver
 void Encodings::addQuaternaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c, Lit d) {
   assert(clause.size() == 0);
   assert(a != lit_Undef && b != lit_Undef && c != lit_Undef && d != lit_Undef);
@@ -90,4 +102,9 @@ void Encodings::addQuaternaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c, Lit
   mx->incId();
   mx->addHardClause(clause);
   clause.clear();
+}
+
+void Encodings::addClause(MaxSATFormula *mx, vec<Lit>& c){
+  mx->incId();
+  mx->addHardClause(c);
 }

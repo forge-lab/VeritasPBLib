@@ -25,11 +25,11 @@
  *
  */
 
-#include "Sequential.h"
+#include "USequential.h"
 
 using namespace openwbo;
 
-void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
+void USequential::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
   assert (sign != _PB_EQUAL_);
 
   vec<Lit> lits;
@@ -111,7 +111,7 @@ void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign)
 
 }
 
-void Sequential::encode(Card *card, MaxSATFormula *maxsat_formula){
+void USequential::encode(Card *card, MaxSATFormula *maxsat_formula){
 
     switch (card->_sign){
       case _PB_EQUAL_:

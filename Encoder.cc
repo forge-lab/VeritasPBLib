@@ -58,15 +58,12 @@ void Encoder::encodeCardinality(Card *card, MaxSATFormula *maxsat_formula) {
  ************************************************************************************************/
 //
 // Manages the encoding of PB encodings.
-void Encoder::encodePB(MaxSATFormula *mx, vec<Lit> &lits, vec<uint64_t> &coeffs,
-                       uint64_t rhs) {
-
-  vec<Lit> lits_copy;
-  lits.copyTo(lits_copy);
-  vec<uint64_t> coeffs_copy;
-  coeffs.copyTo(coeffs_copy);
+void Encoder::encodePB(PB *pb, MaxSATFormula *mx) {
 
   switch (pb_encoding) {
+    case _PB_ADDER_:
+      adder.encode(pb, mx);
+      break;
   
   default:
     printf("c Error: Invalid PB encoding.\n");

@@ -29,17 +29,15 @@
 #ifndef Encoder_h
 #define Encoder_h
 
-#ifdef SIMP
-#include "simp/SimpSolver.h"
-#else
 #include "core/Solver.h"
-#endif
 
 #include "MaxTypes.h"
 #include "core/SolverTypes.h"
 
 // Encodings
-#include "encodings/Sequential.h"
+#include "encodings/USequential.h"
+#include "encodings/UTotalizer.h"
+#include "encodings/UAdder.h"
 #include "MaxSATFormula.h"
 
 using NSPACE::vec;
@@ -52,7 +50,7 @@ namespace openwbo {
 class Encoder {
 
 public:
-  Encoder(int cardinality = _CARD_SEQUENTIAL_, int pb = _PB_SWC_) {
+  Encoder(int cardinality = _CARD_SEQUENTIAL_, int pb = _PB_ADDER_) {
     pb_encoding = pb;
     cardinality_encoding = cardinality;
   }
@@ -71,7 +69,7 @@ public:
   // PB encodings:
   //
   // Encode pseudo-Boolean constraint into CNF.
-  void encodePB(MaxSATFormula *mx, vec<Lit> &lits, vec<uint64_t> &coeffs, uint64_t rhs);
+  void encodePB(PB *pb, MaxSATFormula *mx);
   
   // Controls the type of encoding to be used:
   //
@@ -87,7 +85,11 @@ protected:
   int amo_encoding;
 
   // Cardinality encodings
-  Sequential sequential;
+  USequential sequential;
+  UTotalizer totalizer;
+
+  // PB encodings
+  UAdder adder;
 
 };
 } // namespace openwbo

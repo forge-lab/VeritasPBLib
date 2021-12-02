@@ -4,6 +4,7 @@
  * @section LICENSE
  *
  * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
+ * PBLib,    Copyright (c) 2012-2013  Peter Steinke
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,50 +26,49 @@
  *
  */
 
-#ifndef Encodings_h
-#define Encodings_h
+#ifndef UAdder_h
+#define UAdder_h
 
 #include "core/Solver.h"
 
-#include "../MaxTypes.h"
+#include "Encodings.h"
 #include "core/SolverTypes.h"
-#include "../MaxSATFormula.h"
-
-using NSPACE::vec;
-using NSPACE::Lit;
-using NSPACE::mkLit;
-using NSPACE::lit_Error;
-using NSPACE::lit_Undef;
-using NSPACE::Solver;
+#include <map>
+#include <utility>
+#include <vector>
+#include <queue>
 
 namespace openwbo {
-
-//=================================================================================================
-class Encodings {
+class UAdder : public Encodings {
 
 public:
-  Encodings(pb_Cardinality cardinality_type = _CARD_SEQUENTIAL_, pb_PB pb_type = _PB_ADDER_) {
-    _cardinality_type = cardinality_type;
-    _pb_type = pb_type;
-  }
-  ~Encodings() {}
+  UAdder() {}
+  ~UAdder() {}
 
-  // Auxiliary methods for creating clauses
-  //
-  void addUnitClause(MaxSATFormula * mx, Lit a);
-  void addBinaryClause(MaxSATFormula * mx, Lit a, Lit b);
-  void addTernaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c);
-  void addQuaternaryClause(MaxSATFormula * mx, Lit a, Lit b, Lit c, Lit d);
-  void addClause(MaxSATFormula *mx, vec<Lit>& c);
-  void encode(Card *card, MaxSATFormula *maxsat_formula);
-  void encode(PB *pb, MaxSATFormula *maxsat_formula);
+void encode(PB *pb, MaxSATFormula *maxsat_formula);
 
 protected:
-  vec<Lit> clause; // Temporary clause to be used while building the encodings.
-  pb_Cardinality _cardinality_type;
-  pb_PB _pb_type;
-  
+
+  vec<Lit> _output;
+  vec<Lit> clause;
+  std::vector<std::queue<Lit> > _buckets;
+
+  void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
+
+  // Encode constraint.
+  void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits, vec<uint64_t> &coeffs, uint64_t rhs);
+
+  void FA_extra ( MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a, Lit b, Lit c );
+  Lit FA_carry ( MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c );
+  Lit FA_sum ( MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c );
+  Lit HA_carry ( MaxSATFormula *maxsat_formula, Lit a, Lit b);
+  Lit HA_sum ( MaxSATFormula *maxsat_formula, Lit a, Lit b );
+  void adderTree (MaxSATFormula *maxsat_formula, std::vector< std::queue< Lit > > & buckets, vec< Lit >& result );
+  void lessThanOrEqual (MaxSATFormula *maxsat_formula, vec< Lit > & xs, std::vector< uint64_t > & ys);
+  void numToBits ( std::vector<uint64_t> & bits, uint64_t n, uint64_t number );
+  uint64_t ld64(const uint64_t x);
+
 };
-} // namespace openwbo
+}
 
 #endif

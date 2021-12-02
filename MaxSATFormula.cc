@@ -160,8 +160,9 @@ Hard &MaxSATFormula::getHardClause(int pos) {
 void MaxSATFormula::addPBConstraint(PB *p) {
 
   // Add constraint to formula data structure.
-  id++; // updates the current if of the constraint
+  id++; // updates the current id of the constraint
   if (p->isClause()) {
+    printf("clause\n");
     if (p->_sign == _PB_EQUAL_){
       assert (p->_lits.size() == 1);
       vec<Lit> unit;
@@ -171,7 +172,7 @@ void MaxSATFormula::addPBConstraint(PB *p) {
       addHardClause(unit);
     } else addHardClause(p->_lits);
   } else if (p->isCardinality()) {
-    
+    printf("cardinality\n");
     cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
 
   } else {
@@ -179,9 +180,7 @@ void MaxSATFormula::addPBConstraint(PB *p) {
     //   p->changeSign();
     // }
 
-    // TODO: support PB constraints
-    assert(false);
-
+    // TODO: test PB constraints
     pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign));
   }
 

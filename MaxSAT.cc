@@ -256,22 +256,6 @@ bool MaxSAT::isBMO(bool cache) {
  //
  ************************************************************************************************/
 
-// Prints information regarding the AMO encoding.
-void MaxSAT::print_AMO_configuration(int encoding) {
-  switch (encoding) {
-  case _AMO_LADDER_:
-    printf("c |  AMO Encoding:         %12s                      "
-           "                                             |\n",
-           "Ladder");
-    break;
-
-  default:
-    printf("c Error: Invalid AMO encoding.\n");
-    printf("s UNKNOWN\n");
-    break;
-  }
-}
-
 // Prints information regarding the PB encoding.
 void MaxSAT::print_PB_configuration(int encoding) {
   switch (encoding) {

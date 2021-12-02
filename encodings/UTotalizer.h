@@ -3,7 +3,7 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,31 +25,36 @@
  *
  */
 
-#ifndef Sequential_h
-#define Sequential_h
+#ifndef UTotalizer_h
+#define UTotalizer_h
 
-#ifdef SIMP
-#include "simp/SimpSolver.h"
-#else
 #include "core/Solver.h"
-#endif
 
 #include "Encodings.h"
 #include "core/SolverTypes.h"
 
 namespace openwbo {
 
-class Sequential : public Encodings {
+class UTotalizer : public Encodings {
 
 public:
-  Sequential() {
+  UTotalizer() {
   }
-  ~Sequential() {}
+  ~UTotalizer() {}
 
   void encode(Card *card, MaxSATFormula *maxsat_formula);
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
+  void adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right, vec<Lit> &output);
+  void toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits);
+  int _rhs;
+  vec<Lit> cardinality_inlits; // Stores the inputs of the cardinality
+                               // constraint encoding for the totalizer encoding
+  vec<Lit> cardinality_outlits; // Stores the outputs of the cardinality
+                                // constraint encoding for incremental solving
+
+
 
 };
 } // namespace openwbo

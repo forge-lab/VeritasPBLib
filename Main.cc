@@ -5,7 +5,7 @@
  *
  * MiniSat,   Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
  *            Copyright (c) 2007-2010, Niklas Sorensson
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -73,7 +73,7 @@ static void SIGINT_exit(int signum) {
 int main(int argc, char **argv) {
   printf("c\nc VeritasPBLib:\t Verified PB encodings\n");
   printf("c Version:\t 2021\n");
-  printf("c Authors:\t Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom\n");
+  printf("c Authors:\t Ruben Martins, Stephan Gocht, Jakob Nordstrom\n");
   printf("c Contact:\t rubenm@andrew.cmu.edu\nc\n");
   NSPACE::setUsageHelp("c USAGE: %s [options] <input-file>\n\n");
 
@@ -81,8 +81,8 @@ int main(int argc, char **argv) {
                           "Cardinality encoding (0=sequential, "
                           "1=totalizer, 2=adder).\n", 0, IntRange(0, 2));
 
-    IntOption pb("VeritasPBLib", "pb", "PB encoding (0=sequential,1=totalizer, 2=adder).\n", 
-                  0,IntRange(0, 2));
+    IntOption pseudoboolean("VeritasPBLib", "pb", "PB encoding (0=sequential,1=totalizer, 2=adder).\n", 
+                  2,IntRange(0, 2));
 
     parseOptions(argc, argv, true);
 
@@ -141,6 +141,7 @@ int main(int argc, char **argv) {
 
 
     pb_Cardinality card;
+    pb_PB pb;
 
     switch(cardinality){
        case 0: 
@@ -159,16 +160,36 @@ int main(int argc, char **argv) {
          assert(false);
     }
 
+    switch(pseudoboolean){
+       case 0: 
+         pb = _PB_SWC_;
+         printf("c PB encoding: SWC\n");
+         break;
+       case 1:
+         pb = _PB_GTE_;
+         printf("c PB encoding: GTE\n");
+         break;
+       case 2:
+         pb = _PB_ADDER_;
+         printf("c PB encoding: adder\n");
+         break;
+       default:
+         assert(false);
+    }
+
    
-   Encodings * encoder = new Encodings(card);
+   Encodings * encoder = new Encodings(card, pb);
 
 
    for(int i = 0; i < maxsat_formula->nCard(); i++){
-        Card * card = maxsat_formula->getCardinalityConstraint(i);
-        encoder->encode(card, maxsat_formula);
+        Card * c = maxsat_formula->getCardinalityConstraint(i);
+        encoder->encode(c, maxsat_formula);
    }
 
-   // TODO: encode PB constraints as well
+   for (int i = 0; i < maxsat_formula->nPB(); i++){
+        PB * p = maxsat_formula->getPBConstraint(i);
+        encoder->encode(p, maxsat_formula);
+   }
 
    std::string filename(argv[1]);
    filename = filename.substr(0, filename.find_last_of("."));

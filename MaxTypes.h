@@ -3,7 +3,7 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
  * Open-WBO, Copyright (c) 2013-2021, Ruben Martins, Vasco Manquinho, Ines Lynce
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -66,16 +66,8 @@ enum StatusCode {
   _UNKNOWN_ = 40,
   _ERROR_ = 50
 };
-enum {
-  _INCREMENTAL_NONE_ = 0,
-  _INCREMENTAL_BLOCKING_,
-  _INCREMENTAL_WEAKENING_,
-  _INCREMENTAL_ITERATIVE_
-};
 enum pb_Cardinality { _CARD_SEQUENTIAL_ = 0, _CARD_TOTALIZER_, _CARD_ADDER_ };
-enum { _AMO_LADDER_ = 0 };
-enum { _PB_SWC_ = 0, _PB_GTE_, _PB_ADDER_ };
-enum { _PART_SEQUENTIAL_ = 0, _PART_SEQUENTIAL_SORTED_, _PART_BINARY_ };
+enum pb_PB {_PB_SWC_ = 0, _PB_GTE_, _PB_ADDER_ };
 
 /*! Definition of possible constraint signs. */
 enum pb_Sign { _PB_GREATER_OR_EQUAL_ = 0x1, _PB_LESS_OR_EQUAL_, _PB_EQUAL_ };
