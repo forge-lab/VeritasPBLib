@@ -79,10 +79,12 @@ int main(int argc, char **argv) {
 
     IntOption cardinality("VeritasPBLib", "card",
                           "Cardinality encoding (0=sequential, "
-                          "1=totalizer, 2=adder).\n", 0, IntRange(0, 2));
+                          "1=totalizer, 2=adder, 3=verified sequential).\n", 0, IntRange(0, 3));
 
     IntOption pseudoboolean("VeritasPBLib", "pb", "PB encoding (0=sequential,1=totalizer, 2=adder).\n", 
                   2,IntRange(0, 2));
+
+    BoolOption stats("VeritasPBLib", "stats", "Statistics for cardinality constraints", 0);
 
     parseOptions(argc, argv, true);
 
@@ -156,6 +158,10 @@ int main(int argc, char **argv) {
          card = _CARD_ADDER_;
          printf("c Cardinality encoding: adder\n");
          break;
+       case 3:
+          card = _CARD_VSEQUENTIAL_;
+          printf("c Cardinality encoding: verified sequential\n");
+          break;
        default:
          assert(false);
     }
@@ -177,9 +183,10 @@ int main(int argc, char **argv) {
          assert(false);
     }
 
+
+  if (!stats){
    
    Encodings * encoder = new Encodings(card, pb);
-
 
    for(int i = 0; i < maxsat_formula->nCard(); i++){
         Card * c = maxsat_formula->getCardinalityConstraint(i);
@@ -200,6 +207,34 @@ int main(int argc, char **argv) {
    std::cout << "c CNF file " << filename << ".cnf" << std::endl;
    std::cout << "c PBP file " << filename << ".pbp" << std::endl;
 
+  } else {
+
+    if (maxsat_formula->nCard() > 0){
+
+        int min = -1;
+        int max = -1;
+        int avg = 0;
+        float ratio = 0.0;
+
+         for(int i = 0; i < maxsat_formula->nCard(); i++){
+            Card * c = maxsat_formula->getCardinalityConstraint(i);
+            if (c->_lits.size() < min || min == -1) min = c->_lits.size();
+            if (c->_lits.size() > max) max = c->_lits.size();
+            avg += c->_lits.size();
+            // assumes that we can always convert <= to >= to have a smaller encoding
+            float r = (float)c->_rhs/c->_lits.size();
+            if (r > 0.5) ratio += 1-r;
+            else ratio += r;
+       }
+
+       std::cout << "c === Cardinality stats ===" << std::endl;
+       std::cout << "c | Card - min size: " << min << std::endl;
+       std::cout << "c | Card - max size: " << max << std::endl;
+       std::cout << "c | Card - avg size: " << (avg/maxsat_formula->nCard()) << std::endl;
+       std::cout << "c | Card - ratio: " << (float)ratio/maxsat_formula->nCard() << std::endl;
+    }
+
+  }
 
    return 0;
 }

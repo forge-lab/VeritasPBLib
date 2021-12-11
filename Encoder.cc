@@ -44,6 +44,10 @@ void Encoder::encodeCardinality(Card *card, MaxSATFormula *maxsat_formula) {
     sequential.encode(card, maxsat_formula);
     break;
 
+  case _CARD_VSEQUENTIAL_:
+    vsequential.encode(card, maxsat_formula);
+    break;
+
   default:
     printf("c Error: Invalid cardinality encoding.\n");
     printf("s UNKNOWN\n");

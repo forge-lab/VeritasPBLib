@@ -38,6 +38,7 @@
 #include "encodings/USequential.h"
 #include "encodings/UTotalizer.h"
 #include "encodings/UAdder.h"
+#include "encodings/VSequential.h"
 #include "MaxSATFormula.h"
 
 using NSPACE::vec;
@@ -87,6 +88,7 @@ protected:
   // Cardinality encodings
   USequential sequential;
   UTotalizer totalizer;
+  VSequential vsequential;
 
   // PB encodings
   UAdder adder;

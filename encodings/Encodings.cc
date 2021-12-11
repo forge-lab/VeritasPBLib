@@ -27,6 +27,7 @@
 
 #include "Encodings.h"
 #include "USequential.h"
+#include "VSequential.h"
 #include "UTotalizer.h"
 #include "UAdder.h"
 
@@ -42,6 +43,9 @@ void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula){
     tot->encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_ADDER_){
     assert(false);
+  } else if (_cardinality_type == _CARD_VSEQUENTIAL_){
+    VSequential * vseq = new VSequential();
+    vseq->encode(card, maxsat_formula);
   } else assert(false);
 }
 
