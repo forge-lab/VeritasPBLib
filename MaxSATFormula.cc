@@ -237,7 +237,6 @@ void MaxSATFormula::convertPBtoMaxSAT() {
     setProblemType(_WEIGHTED_);
 }
 
-
 void MaxSATFormula::printCNFtoFile(std::string filename){
 
   std::ofstream file;
@@ -252,5 +251,24 @@ void MaxSATFormula::printCNFtoFile(std::string filename){
 }
 
 void MaxSATFormula::printPBPtoFile(std::string filename){
+  std::ofstream file;
+  file.open(filename + ".pbp");
+  file << "pseudo-Boolean proof version 1.2" << "\n";
+  file << "f" << "\n";
+  file << "# 1" << "\n";
 
+  for (int i = 0; i < nProofExpr(); i++){
+    PBP * pbp = getProofExpr(i);
+    file << pbp->print() << "\n";
+  }
+
+  file << "# 0" << "\n";
+
+  for(int i = 0; i < nHard(); i++){
+     Hard &hard = getHardClause(i);
+     file << hard.printPBPu(getVarMap()) << "\n";
+   }
+
+  file << "w 1" << "\n";
+  
 }

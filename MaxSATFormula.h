@@ -36,6 +36,7 @@
 
 #include "FormulaPB.h"
 #include "MaxTypes.h"
+#include "FormulaVeriPB.h"
 
 #include <map>
 #include <string>
@@ -84,6 +85,27 @@ public:
 
   Hard() {}
   ~Hard() { clause.clear(); }
+
+
+  std::string printPBPu(varMap v){
+    std::stringstream ss;
+    assert (clause.size() > 0);
+    int rhs = 1;
+    ss << "u ";
+    for (int i = 0; i < clause.size(); i++){
+      if (sign(clause[i])) {
+        ss << "1 ~x";
+        rhs--;
+      } else ss << "1 x";
+      varMap::const_iterator iter = v.find(var(clause[i]));
+      if (iter != v.end())
+        ss << iter->second << " ";
+      else
+        ss << (var(clause[i])+1) << " ";
+    }
+    ss << ">= " << rhs << " ;";
+    return ss.str();
+  }
 
   std::string print(varMap v){
     std::stringstream ss;
@@ -212,14 +234,24 @@ public:
   void printCNFtoFile(std::string filename);
   void printPBPtoFile(std::string filename); 
 
+  PBP* getProofExpr(int i) { return proof_expr[i]; }
+  int nProofExpr() { return proof_expr.size(); }
+  void addProofExpr(PBP * pbp){
+    proof_expr.push(pbp);
+  }
+
+
+  PBP* getProofClauses(int i) { return proof_cls[i]; }
+  int nProofClauses() { return proof_cls.size(); }
+
 protected:
   // MaxSAT database
   //
   vec<Soft> soft_clauses; //<! Stores the soft clauses of the MaxSAT formula.
   vec<Hard> hard_clauses; //<! Stores the hard clauses of the MaxSAT formula.
 
-  // TODO: create a class instead of using strings
-  vec<std::string> proof_clauses; //<! Stores the proof expressions of the PB conversion
+  vec<PBP*> proof_expr; //<! Stores the proof expressions of the PB conversion
+  vec<PBP*> proof_cls; //<! Stores the proof CNF clauses 
 
   // PB database
   //

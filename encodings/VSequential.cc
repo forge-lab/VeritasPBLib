@@ -30,103 +30,41 @@
 
 using namespace openwbo;
 
+void VSequential::reify(Lit z, PB * pb){
+  vec<Lit> lits;
+  vec<int64_t> coeffs;
+  int64_t sum = 0;
+  for (int i = 0; i < pb->_lits.size(); i++){
+    lits.push(~pb->_lits[i]);
+    coeffs.push(pb->_coeffs[i]);
+    sum += pb->_coeffs[i];
+  }
+  PB * pb_leq = new PB(lits, coeffs, sum-pb->_rhs+1, _PB_GREATER_OR_EQUAL_);
+  pb_leq->addProduct(z, sum-pb->_rhs+1);
+  PBPred * pbp_leq = new PBPred(pb_leq, var(z)+1, 1);
+  mx->addProofExpr(pbp_leq);
+  
+  pb->addProduct(~z, pb->_rhs);
+  PBPred * pbp = new PBPred(pb, var(z)+1, 0);
+  mx->addProofExpr(pbp);
+}
+
+void VSequential::derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs){
+  for (int j = 0; j < rhs; j++){
+      // introduce variables as reification
+      // reify(z_j <-> sum^n_i l_i >= j)
+      if (j < right.size()){
+        vec<int64_t> coeffs;
+        coeffs.growTo(left.size(), 1);
+        PB * pb = new PB(left, coeffs, j+1, _PB_GREATER_OR_EQUAL_);
+        reify(right[j], pb);
+      }
+    }
+}
+
+
 void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
   assert (sign != _PB_EQUAL_);
-
-
-//   * #variable= 4 #constraint= 1
-// 1 y1 1 y2 1 y3 1 y4 >= 2 ;
-// p cnf 11 23
-// -y1 s_{1,1} 0
-// y1 -s_{1,1} 0
-// -y2 s_{2,1} 0
-// -s_{1,1} s_{2,1} 0
-// y2 s_{1,1} -s_{2,1} 0
-// -y2 -s_{1,1} s_{2,2} 0
-// y2 -s_{2,2} 0
-// s_{1,1} -s_{2,2} 0
-// -y3 s_{3,1} 0
-// -s_{2,1} s_{3,1} 0
-// y3 s_{2,1} -s_{3,1} 0
-// -y3 -s_{2,1} s_{3,2} 0
-// -s_{2,2} s_{3,2} 0
-// y3 s_{2,2} -s_{3,2} 0
-// s_{2,1} s_{2,2} -s_{3,2} 0
-// -y4 s_{4,1} 0
-// -s_{3,1} s_{4,1} 0
-// y4 s_{3,1} -s_{4,1} 0
-// -y4 -s_{3,1} s_{4,2} 0
-// -s_{3,2} s_{4,2} 0
-// y4 s_{3,2} -s_{4,2} 0
-// s_{3,1} s_{3,2} -s_{4,2} 0
-// s_{4,2} 0
-
-
-// pseudo-Boolean proof version 1.2
-// f 1 0
-// # 1
-// red 1 y1 1 ~s_{1,1} >= 1 ; s_{1,1} -> 0
-// red 1 ~y1 1 s_{1,1} >= 1 ; s_{1,1} -> 1
-// red 1 s_{1,1} 1 y2 1 ~s_{2,1} >= 1 ; s_{2,1} -> 0
-// red 1 ~s_{1,1} 1 ~y2 2 s_{2,1} >= 2 ; s_{2,1} -> 1
-// red 1 s_{1,1} 1 y2 2 ~s_{2,2} >= 2 ; s_{2,2} -> 0
-// red 1 ~s_{1,1} 1 ~y2 1 s_{2,2} >= 1 ; s_{2,2} -> 1
-// p 5 6 + 2 d
-// e -1 1 s_{2,1} 1 ~s_{2,2} >= 1 ;
-// red 1 s_{2,1} 1 s_{2,2} 1 y3 1 ~s_{3,1} >= 1 ; s_{3,1} -> 0
-// red 1 ~s_{2,1} 1 ~s_{2,2} 1 ~y3 3 s_{3,1} >= 3 ; s_{3,1} -> 1
-// red 1 s_{2,1} 1 s_{2,2} 1 y3 2 ~s_{3,2} >= 2 ; s_{3,2} -> 0
-// red 1 ~s_{2,1} 1 ~s_{2,2} 1 ~y3 2 s_{3,2} >= 2 ; s_{3,2} -> 1
-// p 10 11 + 3 d
-// e -1 1 s_{3,1} 1 ~s_{3,2} >= 1 ;
-// red 1 s_{2,1} 1 s_{2,2} 1 y3 3 ~s_{3,3} >= 3 ; s_{3,3} -> 0
-// red 1 ~s_{2,1} 1 ~s_{2,2} 1 ~y3 1 s_{3,3} >= 1 ; s_{3,3} -> 1
-// p 12 14 + 3 d
-// e -1 1 s_{3,2} 1 ~s_{3,3} >= 1 ;
-// red 1 s_{3,1} 1 s_{3,2} 1 y4 1 ~s_{4,1} >= 1 ; s_{4,1} -> 0
-// red 1 ~s_{3,1} 1 ~s_{3,2} 1 ~y4 3 s_{4,1} >= 3 ; s_{4,1} -> 1
-// red 1 s_{3,1} 1 s_{3,2} 1 y4 2 ~s_{4,2} >= 2 ; s_{4,2} -> 0
-// red 1 ~s_{3,1} 1 ~s_{3,2} 1 ~y4 2 s_{4,2} >= 2 ; s_{4,2} -> 1
-// p 18 19 + 3 d
-// e -1 1 s_{4,1} 1 ~s_{4,2} >= 1 ;
-// red 1 s_{3,1} 1 s_{3,2} 1 y4 3 ~s_{4,3} >= 3 ; s_{4,3} -> 0
-// red 1 ~s_{3,1} 1 ~s_{3,2} 1 ~y4 1 s_{4,3} >= 1 ; s_{4,3} -> 1
-// p 20 22 + 3 d
-// e -1 1 s_{4,2} 1 ~s_{4,3} >= 1 ;
-// p 2 4 6 + 2 d + 9 11 + 2 d 2 * 14 + 3 d + 17 19 + 2 d 2 * 22 + 3 d +
-// p 3 7 5 + 2 d + 15 12 + 2 d 2 * 10 + 3 d + 23 20 + 2 d 2 * 18 + 3 d +
-// p 26 1 +
-// # 0
-// u 1 ~y1 1 s_{1,1} >= 1 ;
-// u 1 s_{1,1} >= 0 ;
-// u 1 y1 1 ~s_{1,1} >= 1 ;
-// u 1 ~s_{1,1} >= 0 ;
-// u 1 ~y2 1 s_{2,1} >= 1 ;
-// u 1 ~s_{1,1} 1 s_{2,1} >= 1 ;
-// u 1 y2 1 s_{1,1} 1 ~s_{2,1} >= 1 ;
-// u 1 s_{1,1} 1 ~s_{2,1} >= 0 ;
-// u 1 ~y2 1 ~s_{1,1} 1 s_{2,2} >= 1 ;
-// u 1 s_{2,2} >= 0 ;
-// u 1 y2 1 ~s_{2,2} >= 1 ;
-// u 1 s_{1,1} 1 ~s_{2,2} >= 1 ;
-// u 1 ~y3 1 s_{3,1} >= 1 ;
-// u 1 ~s_{2,1} 1 s_{3,1} >= 1 ;
-// u 1 y3 1 s_{2,1} 1 ~s_{3,1} >= 1 ;
-// u 1 s_{2,1} 1 ~s_{3,1} >= 0 ;
-// u 1 ~y3 1 ~s_{2,1} 1 s_{3,2} >= 1 ;
-// u 1 ~s_{2,2} 1 s_{3,2} >= 1 ;
-// u 1 y3 1 s_{2,2} 1 ~s_{3,2} >= 1 ;
-// u 1 s_{2,1} 1 s_{2,2} 1 ~s_{3,2} >= 1 ;
-// u 1 ~y4 1 s_{4,1} >= 1 ;
-// u 1 ~s_{3,1} 1 s_{4,1} >= 1 ;
-// u 1 y4 1 s_{3,1} 1 ~s_{4,1} >= 1 ;
-// u 1 s_{3,1} 1 ~s_{4,1} >= 0 ;
-// u 1 ~y4 1 ~s_{3,1} 1 s_{4,2} >= 1 ;
-// u 1 ~s_{3,2} 1 s_{4,2} >= 1 ;
-// u 1 y4 1 s_{3,2} 1 ~s_{4,2} >= 1 ;
-// u 1 s_{3,1} 1 s_{3,2} 1 ~s_{4,2} >= 1 ;
-// u 1 s_{4,2} >= 1 ;
-// w 1
 
 vec<Lit> lits;
 uint64_t rhs = card->_rhs;
@@ -151,10 +89,15 @@ if (n-rhs < rhs){
 }
 
 uint64_t k = rhs;
-if (current_sign == _PB_LESS_OR_EQUAL_) k++;
+k++;
+//if (current_sign == _PB_LESS_OR_EQUAL_) k++;
 
 // TODO: simplify the cardinality constraint? 
 // <= 0 -> all literals are negative; >= n -> all literals are positive  
+
+// TODO: creating some variables that may not be used in the encoding
+// Example: if >= we are creating k+1 for the pbp format ; 
+// TODO: only create these variables for the pbp format
 
 // Create auxiliary variables.
 vec<Lit> *seq_auxiliary = new vec<Lit>[n];
@@ -167,52 +110,48 @@ vec<Lit> *seq_auxiliary = new vec<Lit>[n];
     }
   }
 
-  std::cout << "k=" << k << std::endl;
-  std::cout << "n=" << n << std::endl;
+// pbp logging
+  for (int i = 1; i <= n; i++){
+    int m = i;
+    if(k < m) m = k;
+    // derive_unary_sum(l_i + sum^m_{i-1},j=1 s_{i-1},j = sum^m_i,j=1 s_i,j)
+    vec<Lit> left;
+    vec<Lit> right;
+    left.push(lits[i-1]);
+    for (int j = 1; j <= m; j++){
+      right.push(seq_auxiliary[i-1][j-1]);
+      if (j != m){ 
+        left.push(seq_auxiliary[i-2][j-1]);
+      }
+    }
+    assert (left.size() == right.size());
+    derive_unary_sum(left, right, k);
+  }
 
-  // -y1 s_{1,1} 0
-  // y1 -s_{1,1} 0
+
+if (current_sign == _PB_GREATER_OR_EQUAL_) k--;
+
   addBinaryClause(maxsat_formula, ~lits[0], seq_auxiliary[0][0]);
   addBinaryClause(maxsat_formula, lits[0], ~seq_auxiliary[0][0]);
 
   for (int i = 1; i < n; i++){
-    // -y2 s_{2,1} 0
-    // -y3 s_{3,1} 0
-    // -y4 s_{4,1} 0    
     addBinaryClause(maxsat_formula, ~lits[i], seq_auxiliary[i][0]);
 
     if (i+1 == seq_auxiliary[i].size()){
-      // y2 -s_{2,2} 0
       addBinaryClause(maxsat_formula, lits[i], ~seq_auxiliary[i][i]);
-      // s_{1,1} -s_{2,2} 0
       addBinaryClause(maxsat_formula, seq_auxiliary[i-1][i-1], ~seq_auxiliary[i][i]);
     }
 
     for (int j = 0; j < k; j++){
-      // y2 s_{1,1} -s_{2,1} 0
-      // y3 s_{2,1} -s_{3,1} 0
-      // y3 s_{2,2} -s_{3,2} 0
-      // y4 s_{3,1} -s_{4,1} 0
-      // y4 s_{3,2} -s_{4,2} 0
       if (j < seq_auxiliary[i-1].size()) addTernaryClause(maxsat_formula, lits[i], seq_auxiliary[i-1][j],~seq_auxiliary[i][j]);
 
-      // -s_{1,1} s_{2,1} 0
-      // -s_{2,1} s_{3,1} 0
-      // -s_{2,2} s_{3,2} 0
-      // -s_{3,2} s_{4,2} 0
-      // -s_{3,1} s_{4,1} 0 
       if (j < seq_auxiliary[i-1].size()) addBinaryClause(maxsat_formula, ~seq_auxiliary[i-1][j], seq_auxiliary[i][j]);
 
       if (j+1 < k && j < seq_auxiliary[i-1].size()) addTernaryClause(maxsat_formula, ~lits[i], ~seq_auxiliary[i-1][j], seq_auxiliary[i][j+1]);
-      // -y2 -s_{1,1} s_{2,2} 0
-      // -y3 -s_{2,1} s_{3,2} 0
-      // -y4 -s_{3,1} s_{4,2} 0
 
       if (i > 1 && j+1 < k && j < seq_auxiliary[i-1].size() && j+1 < seq_auxiliary[i-1].size()){
         addTernaryClause(maxsat_formula, seq_auxiliary[i-1][j], seq_auxiliary[i-1][j+1], ~seq_auxiliary[i][j+1]);
       } 
-      // s_{2,1} s_{2,2} -s_{3,2} 0      
-      // s_{3,1} s_{3,2} -s_{4,2} 0
     }
   }
 
@@ -224,6 +163,8 @@ else addUnitClause(maxsat_formula, ~seq_auxiliary[n-1][k-1]);
 }
 
 void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula){
+
+  mx = maxsat_formula;
 
     switch (card->_sign){
       case _PB_EQUAL_:

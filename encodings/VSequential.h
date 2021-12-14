@@ -32,6 +32,7 @@
 
 #include "Encodings.h"
 #include "core/SolverTypes.h"
+#include "../FormulaVeriPB.h"
 
 namespace openwbo {
 
@@ -46,6 +47,10 @@ public:
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
+  void derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs);
+  void reify(Lit z, PB * pb);
+
+  MaxSATFormula *mx;
 
 };
 } // namespace openwbo

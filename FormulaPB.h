@@ -178,28 +178,24 @@ public:
     return true;
   }
 
-  void print() {
-    // Assume _sign == false...
-    if (isClause())
-      printf("Clause: ");
-    else if (isCardinality())
-      printf("Card: ");
-    else
-      printf("PB: ");
-
+  std::string print() {
+    std::stringstream ss;
     for (int i = 0; i < _coeffs.size(); i++) {
-      printf("%d ", (int)_coeffs[i]);
+      ss << _coeffs[i] << " ";
       if (sign(_lits[i]))
-        printf("~");
-      printf("%d ", var(_lits[i]) + 1);
+        ss << "~";
+      ss << "x" << var(_lits[i]) + 1 << " ";
     }
-    printf(" >= %d\n", (int)_rhs);
+    if (_sign == _PB_EQUAL_) ss << "= ";
+    else if (_sign == _PB_LESS_OR_EQUAL_) ss << "<= ";
+    else if (_sign == _PB_GREATER_OR_EQUAL_) ss << ">= ";
+    ss <<  _rhs << " ;";
+    return ss.str();
   }
 
   vec<int64_t> _coeffs;
   vec<Lit> _lits;
   int64_t _rhs;
-  //bool _sign; // atLeast: false; atMost: true
   pb_Sign _sign;
 };
 
