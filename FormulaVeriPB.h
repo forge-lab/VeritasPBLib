@@ -41,17 +41,21 @@ namespace openwbo {
 
 class PBP {
   public:
-   PBP(){}
+   PBP(){
+    _ctrid = -1;
+   }
    ~PBP(){}
 
    virtual std::string print() = 0;
+   int _ctrid;
 
 };
 
 // used for the definition of the auxiliary variables
 class PBPred : public PBP {
   public:
-   PBPred(PB * ctr, int v, int value){
+   PBPred(int ctrid, PB * ctr, int v, int value){
+    _ctrid = ctrid;
     _ctr = ctr;
     _v = v;
     _value = value;
@@ -73,7 +77,8 @@ class PBPred : public PBP {
 // this is only useful for debugging and not required for the proof
 class PBPe : public PBP {
   public: 
-    PBPe(int id, PB * ctr){
+    PBPe(int ctrid, int id, PB * ctr){
+      _ctrid = ctrid;
       _id = id;
       _ctr = ctr;
     }
@@ -89,7 +94,8 @@ class PBPe : public PBP {
 
 class PBPp : public PBP {
 public:
-  PBPp(){
+  PBPp(int ctrid){
+    _ctrid = ctrid;
     _p = "p";
   }
 
@@ -97,6 +103,10 @@ public:
   // no error handling is currently enforced
   void addition(int c1, int c2){
     _p += " " + std::to_string(c1) + " " + std::to_string(c2) + " +";
+  }
+
+  void addition(int c1){
+    _p += " " + std::to_string(c1) + " +"; 
   }
 
   void multiplication(int c1, int factor){
@@ -107,6 +117,10 @@ public:
   void division(int c1, int divisor){
     assert(divisor > 0);
    _p += " " + std::to_string(c1) + " " + std::to_string(divisor) + " d";  
+  }
+
+  void division(int divisor){
+   _p += " " + std::to_string(divisor) + " d";   
   }
 
   void saturation(int c1){
@@ -126,8 +140,9 @@ public:
 // this will be automatically translated from the CNF encoding and do not need to be added
 class PBPu : public PBP {
   public:
-    PBPu(vec<Lit> clause){
+    PBPu(int ctrid, vec<Lit> clause){
       clause.copyTo(_clause);
+      _ctrid = ctrid;
     }
 
     std::string print(){

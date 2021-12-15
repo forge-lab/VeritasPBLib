@@ -30,7 +30,7 @@
 
 using namespace openwbo;
 
-void VSequential::reify(Lit z, PB * pb){
+std::pair<PBPred*,PBPred*> VSequential::reify(Lit z, PB * pb){
   vec<Lit> lits;
   vec<int64_t> coeffs;
   int64_t sum = 0;
@@ -41,15 +41,54 @@ void VSequential::reify(Lit z, PB * pb){
   }
   PB * pb_leq = new PB(lits, coeffs, sum-pb->_rhs+1, _PB_GREATER_OR_EQUAL_);
   pb_leq->addProduct(z, sum-pb->_rhs+1);
-  PBPred * pbp_leq = new PBPred(pb_leq, var(z)+1, 1);
+  PBPred * pbp_leq = new PBPred(mx->getIncId(), pb_leq, var(z)+1, 1);
   mx->addProofExpr(pbp_leq);
   
   pb->addProduct(~z, pb->_rhs);
-  PBPred * pbp = new PBPred(pb, var(z)+1, 0);
+  PBPred * pbp = new PBPred(mx->getIncId(), pb, var(z)+1, 0);
   mx->addProofExpr(pbp);
+
+  std::pair<PBPred*,PBPred*> res;
+  res.first = pbp; // geq
+  res.second = pbp_leq; //leq
+  return res;
 }
 
-void VSequential::derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs){
+int VSequential::derive_sum(vec<PBPred*>& sum){
+  int c = sum[0]->_ctrid;
+  for (int j = 2; j <= sum.size(); j++){
+    
+    PBPp * pbp = new PBPp(mx->getIncId());
+    pbp->multiplication(c, j-1);
+    pbp->addition(sum[j-1]->_ctrid);
+    pbp->division(j);
+    mx->addProofExpr(pbp);
+
+    // FIXME: what is the correct update for c?
+    c = ((j-1)*c+sum[j-1]->_ctrid) / j;
+  }
+  return c;
+}
+
+void VSequential::derive_ordering(PBPred* p1, PBPred* p2){
+  int d = 0;
+  for (int i = 0; i < p1->_ctr->_coeffs.size(); i++){
+    if (var(p1->_ctr->_lits[i])+1 != p1->_v)
+      d += p1->_ctr->_coeffs[i];
+  }
+  PBPp * pbp = new PBPp(mx->getIncId());
+  pbp->addition(p1->_ctrid, p2->_ctrid);
+  pbp->division(d);
+  mx->addProofExpr(pbp);
+  //pbp->print();
+}
+
+std::pair<int,int> VSequential::derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs){
+
+  vec<PBPred*> sum_leq;
+  vec<PBPred*> sum_geq;
+  vec<PBPred*> sum_tmp;
+
   for (int j = 0; j < rhs; j++){
       // introduce variables as reification
       // reify(z_j <-> sum^n_i l_i >= j)
@@ -57,9 +96,31 @@ void VSequential::derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs){
         vec<int64_t> coeffs;
         coeffs.growTo(left.size(), 1);
         PB * pb = new PB(left, coeffs, j+1, _PB_GREATER_OR_EQUAL_);
-        reify(right[j], pb);
+        std::pair<PBPred*,PBPred*> p = reify(right[j], pb);
+        sum_geq.push(p.first);
+        sum_tmp.push(p.second);
       }
     }
+
+  // reverse sum_leq
+  for (int i = sum_tmp.size()-1; i >=0 ; i--){
+    sum_leq.push(sum_tmp[i]);
+  }
+
+  int c_geq = derive_sum(sum_geq);
+  int c_leq = derive_sum(sum_leq);
+  
+  for (int i = 0; i < rhs-1; i++){
+    if (i+1 < sum_geq.size()){
+      derive_ordering(sum_leq[i], sum_geq[i+1]);
+    }
+  }
+
+  std::pair<int,int> res;
+  res.first = c_geq;
+  res.second = c_leq;
+
+  return res;
 }
 
 
@@ -111,6 +172,9 @@ vec<Lit> *seq_auxiliary = new vec<Lit>[n];
   }
 
 // pbp logging
+vec<int> leq;
+vec<int> geq;
+
   for (int i = 1; i <= n; i++){
     int m = i;
     if(k < m) m = k;
@@ -125,9 +189,32 @@ vec<Lit> *seq_auxiliary = new vec<Lit>[n];
       }
     }
     assert (left.size() == right.size());
-    derive_unary_sum(left, right, k);
+    std::pair<int,int> res = derive_unary_sum(left, right, k);
+    geq.push(res.first);
+    leq.push(res.second);
   }
 
+//FIXME: fix the output bits of the circuit correctly
+
+// if (current_sign == _PB_GREATER_OR_EQUAL_){
+  
+//   PBPp * pbp = new PBPp(mx->getIncId());
+//   pbp->addition(card->_id, leq[0]);
+//   for (int i = 1; i < leq.size(); i++){
+//     pbp->addition(leq[i]);
+//   }
+//   mx->addProofExpr(pbp);
+// }
+
+// if (current_sign == _PB_LESS_OR_EQUAL_){
+//   PBPp * pbp = new PBPp(mx->getIncId());
+//   pbp->addition(card->_id, geq[0]);
+//   for (int i = 1; i < geq.size(); i++){
+//     pbp->addition(geq[i]);
+//   }
+//   mx->addProofExpr(pbp);
+// }
+// end pbp logging
 
 if (current_sign == _PB_GREATER_OR_EQUAL_) k--;
 
@@ -155,10 +242,8 @@ if (current_sign == _PB_GREATER_OR_EQUAL_) k--;
     }
   }
 
-// s_{4,2} 0
-if (current_sign == _PB_GREATER_OR_EQUAL_) addUnitClause(maxsat_formula, seq_auxiliary[n-1][k-1]);
-else addUnitClause(maxsat_formula, ~seq_auxiliary[n-1][k-1]);
-
+  if (current_sign == _PB_GREATER_OR_EQUAL_) addUnitClause(maxsat_formula, seq_auxiliary[n-1][k-1]);
+  else addUnitClause(maxsat_formula, ~seq_auxiliary[n-1][k-1]);
 
 }
 

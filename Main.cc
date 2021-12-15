@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 
     IntOption cardinality("VeritasPBLib", "card",
                           "Cardinality encoding (0=sequential, "
-                          "1=totalizer, 2=adder, 3=verified sequential).\n", 0, IntRange(0, 3));
+                          "1=totalizer, 2=adder, 3=verified sequential).\n", 3, IntRange(0, 3));
 
     IntOption pseudoboolean("VeritasPBLib", "pb", "PB encoding (0=sequential,1=totalizer, 2=adder).\n", 
                   2,IntRange(0, 2));

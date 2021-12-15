@@ -47,8 +47,10 @@ public:
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
-  void derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs);
-  void reify(Lit z, PB * pb);
+  std::pair<int,int> derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs);
+  std::pair<PBPred*,PBPred*> reify(Lit z, PB * pb);
+  int derive_sum(vec<PBPred*>& sum);
+  void derive_ordering(PBPred* p1, PBPred* p2);
 
   MaxSATFormula *mx;
 
