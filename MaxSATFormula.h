@@ -95,7 +95,7 @@ public:
     for (int i = 0; i < clause.size(); i++){
       if (sign(clause[i])) {
         ss << "1 ~x";
-        rhs--;
+        //rhs--;
       } else ss << "1 x";
       varMap::const_iterator iter = v.find(var(clause[i]));
       if (iter != v.end())

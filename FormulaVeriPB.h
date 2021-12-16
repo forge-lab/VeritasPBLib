@@ -153,7 +153,7 @@ class PBPu : public PBP {
       for (int i = 0; i < _clause.size(); i++){
         if (sign(_clause[i])){
           ss << "1 ~" << (var(_clause[i])+1);
-          rhs--;
+          //rhs--;
         } else ss << "1 " << (var(_clause[i])+1);
       }
       ss << " >= " << rhs << " ;";
