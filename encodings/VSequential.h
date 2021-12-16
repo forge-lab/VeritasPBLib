@@ -53,7 +53,7 @@ private:
   void derive_ordering(PBPred* p1, PBPred* p2);
 
   MaxSATFormula *mx;
-
+  
 };
 } // namespace openwbo
 

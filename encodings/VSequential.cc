@@ -45,27 +45,38 @@ std::pair<PBPred*,PBPred*> VSequential::reify(Lit z, PB * pb){
   mx->addProofExpr(pbp_leq);
   
   pb->addProduct(~z, pb->_rhs);
-  PBPred * pbp = new PBPred(mx->getIncId(), pb, var(z)+1, 0);
-  mx->addProofExpr(pbp);
-
+  PBPred * pbp_geq = new PBPred(mx->getIncId(), pb, var(z)+1, 0);
+  mx->addProofExpr(pbp_geq);
+  
   std::pair<PBPred*,PBPred*> res;
-  res.first = pbp; // geq
+  res.first = pbp_geq; // geq
   res.second = pbp_leq; //leq
   return res;
 }
 
 int VSequential::derive_sum(vec<PBPred*>& sum){
+  if (sum.size() < 2) {
+    assert (sum.size() == 1);
+    return sum[0]->_ctrid;
+  }
+  
   int c = sum[0]->_ctrid;
   for (int j = 2; j <= sum.size(); j++){
     
     PBPp * pbp = new PBPp(mx->getIncId());
-    pbp->multiplication(c, j-1);
-    pbp->addition(sum[j-1]->_ctrid);
+    // avoid multiplication by 1
+    if (j-1 == 1) pbp->addition(c, sum[j-1]->_ctrid);
+    else {
+      pbp->multiplication(c, j-1);
+      pbp->addition(sum[j-1]->_ctrid);
+    }
     pbp->division(j);
     mx->addProofExpr(pbp);
 
-    // FIXME: what is the correct update for c?
-    c = ((j-1)*c+sum[j-1]->_ctrid) / j;
+    // not needed but may make the proof easier to read
+    if (j != sum.size()) c = -1;
+    else c = pbp->_ctrid;
+
   }
   return c;
 }
@@ -80,14 +91,11 @@ void VSequential::derive_ordering(PBPred* p1, PBPred* p2){
   pbp->addition(p1->_ctrid, p2->_ctrid);
   pbp->division(d);
   mx->addProofExpr(pbp);
-  //pbp->print();
 }
 
 std::pair<int,int> VSequential::derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs){
-
   vec<PBPred*> sum_leq;
   vec<PBPred*> sum_geq;
-  vec<PBPred*> sum_tmp;
 
   for (int j = 0; j < rhs; j++){
       // introduce variables as reification
@@ -98,18 +106,19 @@ std::pair<int,int> VSequential::derive_unary_sum(vec<Lit>& left, vec<Lit>& right
         PB * pb = new PB(left, coeffs, j+1, _PB_GREATER_OR_EQUAL_);
         std::pair<PBPred*,PBPred*> p = reify(right[j], pb);
         sum_geq.push(p.first);
-        sum_tmp.push(p.second);
+        sum_leq.push(p.second);
       }
-    }
+  }
 
-  // reverse sum_leq
-  for (int i = sum_tmp.size()-1; i >=0 ; i--){
-    sum_leq.push(sum_tmp[i]);
+  // // reverse sum_leq
+  vec<PBPred*> sum_leq_rev;
+  for (int i = sum_leq.size()-1; i >=0 ; i--){
+    sum_leq_rev.push(sum_leq[i]);
   }
 
   int c_geq = derive_sum(sum_geq);
-  int c_leq = derive_sum(sum_leq);
-  
+  int c_leq = derive_sum(sum_leq_rev);
+
   for (int i = 0; i < rhs-1; i++){
     if (i+1 < sum_geq.size()){
       derive_ordering(sum_leq[i], sum_geq[i+1]);
@@ -150,8 +159,7 @@ if (n-rhs < rhs){
 }
 
 uint64_t k = rhs;
-k++;
-//if (current_sign == _PB_LESS_OR_EQUAL_) k++;
+k++; // for proof logging we always treat it as a _PB_LESS_OR_EQUAL_ ctr
 
 // TODO: simplify the cardinality constraint? 
 // <= 0 -> all literals are negative; >= n -> all literals are positive  
@@ -194,27 +202,25 @@ vec<int> geq;
     leq.push(res.second);
   }
 
-//FIXME: fix the output bits of the circuit correctly
-
-// if (current_sign == _PB_GREATER_OR_EQUAL_){
+if (current_sign == _PB_GREATER_OR_EQUAL_){
   
-//   PBPp * pbp = new PBPp(mx->getIncId());
-//   pbp->addition(card->_id, leq[0]);
-//   for (int i = 1; i < leq.size(); i++){
-//     pbp->addition(leq[i]);
-//   }
-//   mx->addProofExpr(pbp);
-// }
+  PBPp * pbp = new PBPp(mx->getIncId());
+  pbp->addition(card->_id, leq[0]);
+  for (int i = 1; i < leq.size(); i++){
+    pbp->addition(leq[i]);
+  }
+  mx->addProofExpr(pbp);
+}
 
-// if (current_sign == _PB_LESS_OR_EQUAL_){
-//   PBPp * pbp = new PBPp(mx->getIncId());
-//   pbp->addition(card->_id, geq[0]);
-//   for (int i = 1; i < geq.size(); i++){
-//     pbp->addition(geq[i]);
-//   }
-//   mx->addProofExpr(pbp);
-// }
-// end pbp logging
+if (current_sign == _PB_LESS_OR_EQUAL_){
+  PBPp * pbp = new PBPp(mx->getIncId());
+  pbp->addition(card->_id, geq[0]);
+  for (int i = 1; i < geq.size(); i++){
+    pbp->addition(geq[i]);
+  }
+  mx->addProofExpr(pbp);
+}
+//end pbp logging
 
 if (current_sign == _PB_GREATER_OR_EQUAL_) k--;
 
@@ -250,7 +256,7 @@ if (current_sign == _PB_GREATER_OR_EQUAL_) k--;
 void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula){
 
   mx = maxsat_formula;
-
+  
     switch (card->_sign){
       case _PB_EQUAL_:
         encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);

@@ -96,44 +96,45 @@ class PBPp : public PBP {
 public:
   PBPp(int ctrid){
     _ctrid = ctrid;
-    _p = "p";
+    _p << "p";
   }
+
+  // id
+  // stack ids, operators
+  // or string as you go; sstream
 
   // TODO: worth it to make this more generic?
   // no error handling is currently enforced
   void addition(int c1, int c2){
-    _p += " " + std::to_string(c1) + " " + std::to_string(c2) + " +";
+    _p << " " << c1 << " " << c2 << " +";
   }
 
   void addition(int c1){
-    _p += " " + std::to_string(c1) + " +"; 
+    _p << " " << c1 << " +"; 
   }
 
   void multiplication(int c1, int factor){
     assert(factor > 0);
-    _p += " " + std::to_string(c1) + " " + std::to_string(factor) + " *"; 
+    _p << " " << c1 << factor << " *"; 
   }
 
   void division(int c1, int divisor){
     assert(divisor > 0);
-   _p += " " + std::to_string(c1) + " " + std::to_string(divisor) + " d";  
+   _p << " " << c1 << " " << divisor << " d";  
   }
 
   void division(int divisor){
-   _p += " " + std::to_string(divisor) + " d";   
+   _p << " " << divisor << " d";   
   }
 
-  void saturation(int c1){
-   _p += " " + std::to_string(c1) + " s";  
-  }
-
-  // TODO: support literal axioms and weakening
+  // TODO: should we support literal axioms, weakening, saturation?
   
   std::string print(){
-    return _p;
+    return _p.str();
   }
 
-  std::string _p;
+private:
+  std::stringstream _p;
 
 };
 

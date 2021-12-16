@@ -231,7 +231,8 @@ public:
 
   void incId() { id++; }
 
-  int getIncId() { id++; return id-1; }
+  int getIncId() { id++; return id; }
+  int getId() { return id; }
 
   void printCNFtoFile(std::string filename);
   void printPBPtoFile(std::string filename); 
