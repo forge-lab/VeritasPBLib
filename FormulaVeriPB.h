@@ -115,7 +115,7 @@ public:
 
   void multiplication(int c1, int factor){
     assert(factor > 0);
-    _p << " " << c1 << factor << " *"; 
+    _p << " " << c1 << " " << factor << " *"; 
   }
 
   void division(int c1, int divisor){
