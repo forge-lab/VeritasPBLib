@@ -66,8 +66,8 @@ enum StatusCode {
   _UNKNOWN_ = 40,
   _ERROR_ = 50
 };
-enum pb_Cardinality { _CARD_SEQUENTIAL_ = 0, _CARD_TOTALIZER_, _CARD_ADDER_, _CARD_VSEQUENTIAL_ };
-enum pb_PB {_PB_SWC_ = 0, _PB_GTE_, _PB_ADDER_ };
+enum pb_Cardinality { _CARD_SEQUENTIAL_ = 0, _CARD_TOTALIZER_, _CARD_VSEQUENTIAL_, _CARD_VTOTALIZER_ };
+enum pb_PB {_PB_GTE_ = 0, _PB_ADDER_, _PB_VGTE_, _PB_VADDER_ };
 
 /*! Definition of possible constraint signs. */
 enum pb_Sign { _PB_GREATER_OR_EQUAL_ = 0x1, _PB_LESS_OR_EQUAL_, _PB_EQUAL_ };

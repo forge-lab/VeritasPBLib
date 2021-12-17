@@ -79,12 +79,14 @@ int main(int argc, char **argv) {
 
     IntOption cardinality("VeritasPBLib", "card",
                           "Cardinality encoding (0=sequential, "
-                          "1=totalizer, 2=adder, 3=verified sequential).\n", 3, IntRange(0, 3));
+                          "1=totalizer).\n", 0, IntRange(0, 1));
 
-    IntOption pseudoboolean("VeritasPBLib", "pb", "PB encoding (0=sequential,1=totalizer, 2=adder).\n", 
-                  2,IntRange(0, 2));
+    IntOption pseudoboolean("VeritasPBLib", "pb", "PB encoding (0=GTE, 1=adder).\n", 
+                  0,IntRange(0, 1));
 
     BoolOption stats("VeritasPBLib", "stats", "Statistics for cardinality constraints", 0);
+
+    BoolOption verified("VeritasPBLib", "verified", "Uses the verified version of the encoding", 1);
 
     parseOptions(argc, argv, true);
 
@@ -147,37 +149,45 @@ int main(int argc, char **argv) {
 
     switch(cardinality){
        case 0: 
-         card = _CARD_SEQUENTIAL_;
-         printf("c Cardinality encoding: sequential\n");
+        if (verified){
+          card = _CARD_VSEQUENTIAL_;
+          printf("c Cardinality encoding: verified sequential\n"); 
+        } else {
+          card = _CARD_SEQUENTIAL_;
+          printf("c Cardinality encoding: sequential\n");
+        }
          break;
        case 1:
-         card = _CARD_TOTALIZER_;
-         printf("c Cardinality encoding: totalizer\n");
+        if (verified){
+         card = _CARD_VTOTALIZER_;
+         printf("c Cardinality encoding: verified totalizer\n");
+        } else {
+          card = _CARD_TOTALIZER_;
+          printf("c Cardinality encoding: totalizer\n");
+        }
          break;
-       case 2:
-         card = _CARD_ADDER_;
-         printf("c Cardinality encoding: adder\n");
-         break;
-       case 3:
-          card = _CARD_VSEQUENTIAL_;
-          printf("c Cardinality encoding: verified sequential\n");
-          break;
        default:
          assert(false);
     }
 
     switch(pseudoboolean){
-       case 0: 
-         pb = _PB_SWC_;
-         printf("c PB encoding: SWC\n");
+       case 0:
+        if (verified){
+         pb = _PB_VGTE_;
+         printf("c PB encoding: verified GTE\n"); 
+        } else {
+         pb = _PB_GTE_;
+         printf("c PB encoding: GTE\n"); 
+        }
          break;
        case 1:
-         pb = _PB_GTE_;
-         printf("c PB encoding: GTE\n");
-         break;
-       case 2:
-         pb = _PB_ADDER_;
-         printf("c PB encoding: adder\n");
+        if (verified){
+          pb = _PB_VADDER_;
+          printf("c PB encoding: verified adder\n");
+        } else {
+          pb = _PB_ADDER_;
+          printf("c PB encoding: adder\n");
+        }
          break;
        default:
          assert(false);

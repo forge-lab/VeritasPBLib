@@ -256,44 +256,6 @@ bool MaxSAT::isBMO(bool cache) {
  //
  ************************************************************************************************/
 
-// Prints information regarding the PB encoding.
-void MaxSAT::print_PB_configuration(int encoding) {
-  switch (encoding) {
-  case _PB_SWC_:
-    printf("c |  PB Encoding:         %13s                        "
-           "                                           |\n",
-           "SWC");
-    break;
-
-  case _PB_GTE_:
-    printf("c |  PB Encoding:         %13s                        "
-           "                                           |\n",
-           "GTE");
-    break;
-
-  default:
-    printf("c Error: Invalid PB encoding.\n");
-    printf("s UNKNOWN\n");
-    break;
-  }
-}
-
-// Prints information regarding the cardinality encoding.
-void MaxSAT::print_Card_configuration(int encoding) {
-  switch (encoding) {
-    case _CARD_SEQUENTIAL_:
-    printf("c |  Cardinality Encoding:    %19s                             "
-           "                            |\n",
-           "Sequential");
-    break;
-
-  default:
-    printf("c Error: Invalid cardinality encoding.\n");
-    printf("s UNKNOWN\n");
-    break;
-  }
-}
-
 void MaxSAT::blockModel(Solver *solver) {
   assert(model.size() != 0);
 

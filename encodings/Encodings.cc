@@ -41,23 +41,25 @@ void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula){
   } else if (_cardinality_type == _CARD_TOTALIZER_){
     UTotalizer * tot = new UTotalizer();
     tot->encode(card, maxsat_formula);
-  } else if (_cardinality_type == _CARD_ADDER_){
-    assert(false);
   } else if (_cardinality_type == _CARD_VSEQUENTIAL_){
     VSequential * vseq = new VSequential();
     vseq->encode(card, maxsat_formula);
+  } else if (_cardinality_type == _CARD_VTOTALIZER_) {
+    assert(false);
   } else assert(false);
 }
 
 void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula){
 
-  if( _pb_type == _PB_SWC_){ 
-    assert(false);
-  } else if (_pb_type == _PB_GTE_){
+  if (_pb_type == _PB_GTE_){
     assert(false);
   } else if (_pb_type == _PB_ADDER_){
     UAdder * add = new UAdder();
     add->encode(pb, maxsat_formula);
+  } else if (_pb_type == _PB_VGTE_){
+    assert(false);
+  } else if (_pb_type == _PB_VADDER_){
+    assert(false);
   } else assert(false);
 }
 
