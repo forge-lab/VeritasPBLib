@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     pb_Cardinality card;
     pb_PB pb;
 
-    switch(cardinality){
+    switch((int)cardinality){
        case 0: 
         if (verified){
           card = _CARD_VSEQUENTIAL_;
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
          assert(false);
     }
 
-    switch(pseudoboolean){
+    switch((int)pseudoboolean){
        case 0:
         if (verified){
          pb = _PB_VGTE_;
