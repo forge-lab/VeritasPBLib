@@ -36,8 +36,8 @@
 
 #include "MaxTypes.h"
 
-using NSPACE::vec;
 using NSPACE::Lit;
+using NSPACE::vec;
 
 namespace openwbo {
 
@@ -45,7 +45,8 @@ namespace openwbo {
 class Card {
 
 public:
-  Card(vec<Lit> &lits, int64_t rhs, pb_Sign sign = _PB_LESS_OR_EQUAL_, uint id = 0) {
+  Card(vec<Lit> &lits, int64_t rhs, pb_Sign sign = _PB_LESS_OR_EQUAL_,
+       uint id = 0) {
     lits.copyTo(_lits);
     _rhs = rhs;
     _sign = sign;
@@ -64,7 +65,7 @@ public:
   ~Card() {}
 
   void print() {
-    printf("* Card[%d]: ",_id);
+    printf("* Card[%d]: ", _id);
 
     for (int i = 0; i < _lits.size(); i++) {
       if (sign(_lits[i]))
@@ -77,8 +78,9 @@ public:
       printf(" >= %d\n", (int)_rhs);
     else if (_sign == _PB_LESS_OR_EQUAL_)
       printf(" <= %d\n", (int)_rhs);
-    else assert(false);
- }
+    else
+      assert(false);
+  }
 
   vec<Lit> _lits;
   int64_t _rhs;
@@ -90,11 +92,13 @@ public:
 class PB {
 
 public:
-  PB(vec<Lit> &lits, vec<int64_t> &coeffs, int64_t rhs, pb_Sign s = _PB_LESS_OR_EQUAL_) {
+  PB(vec<Lit> &lits, vec<int64_t> &coeffs, int64_t rhs,
+     pb_Sign s = _PB_LESS_OR_EQUAL_, uint id = 0) {
     lits.copyTo(_lits);
     coeffs.copyTo(_coeffs);
     _rhs = rhs;
     _sign = s;
+    _id = id;
   }
 
   PB() {
@@ -130,18 +134,23 @@ public:
 
   bool isClause() {
     // unit clauses
-    if (_sign == _PB_EQUAL_){
-      if (_coeffs.size() != 1) return false;
-    } else if (_sign == _PB_GREATER_OR_EQUAL_){
+    if (_sign == _PB_EQUAL_) {
+      if (_coeffs.size() != 1)
+        return false;
+    } else if (_sign == _PB_GREATER_OR_EQUAL_) {
       int rhs = 1;
-      for (int i = 0; i < _coeffs.size(); i++){
-        if (_coeffs[i] != 1 && _coeffs[i] != -1) return false;
-        if (_coeffs[i] == -1) rhs--;
+      for (int i = 0; i < _coeffs.size(); i++) {
+        if (_coeffs[i] != 1 && _coeffs[i] != -1)
+          return false;
+        if (_coeffs[i] == -1)
+          rhs--;
       }
-      if (rhs != _rhs) return false;        
-    } else if (_sign == _PB_LESS_OR_EQUAL_){
+      if (rhs != _rhs)
+        return false;
+    } else if (_sign == _PB_LESS_OR_EQUAL_) {
       // TODO: support <= for clause detection
-      printf("c Error: PB constraint should be normalized to only include = and >=.\n");
+      printf("c Error: PB constraint should be normalized to only include = "
+             "and >=.\n");
       printf("s UNKNOWN\n");
       exit(_ERROR_);
     }
@@ -186,10 +195,13 @@ public:
         ss << "~";
       ss << "x" << var(_lits[i]) + 1 << " ";
     }
-    if (_sign == _PB_EQUAL_) ss << "= ";
-    else if (_sign == _PB_LESS_OR_EQUAL_) ss << "<= ";
-    else if (_sign == _PB_GREATER_OR_EQUAL_) ss << ">= ";
-    ss <<  _rhs << " ;";
+    if (_sign == _PB_EQUAL_)
+      ss << "= ";
+    else if (_sign == _PB_LESS_OR_EQUAL_)
+      ss << "<= ";
+    else if (_sign == _PB_GREATER_OR_EQUAL_)
+      ss << ">= ";
+    ss << _rhs << " ;";
     return ss.str();
   }
 
@@ -197,6 +209,7 @@ public:
   vec<Lit> _lits;
   int64_t _rhs;
   pb_Sign _sign;
+  uint _id;
 };
 
 class PBObjFunction {

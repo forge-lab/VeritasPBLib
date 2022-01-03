@@ -1,5 +1,6 @@
 # Prerequisites
 *.d
+depend.mk
 
 # Compiled Object files
 *.slo
@@ -30,3 +31,8 @@
 *.exe
 *.out
 *.app
+VeritasPBLib
+
+# Output files
+*.cnf
+*.pbp

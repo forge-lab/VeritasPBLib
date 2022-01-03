@@ -109,8 +109,10 @@ int MaxSATFormula::nHard() {
 } // Returns the number of hard clauses in the working MaxSAT formula.
 
 void MaxSATFormula::newVar(int v) {
-  if(v == -1) n_vars++;
-  else if(v > n_vars) n_vars = v;
+  if (v == -1)
+    n_vars++;
+  else if (v > n_vars)
+    n_vars = v;
 } // Increases the number of variables in the working MaxSAT formula.
 
 // Makes a new literal to be used in the working MaxSAT formula.
@@ -162,14 +164,18 @@ void MaxSATFormula::addPBConstraint(PB *p) {
   // Add constraint to formula data structure.
   id++; // updates the current id of the constraint
   if (p->isClause()) {
-    if (p->_sign == _PB_EQUAL_){
-      assert (p->_lits.size() == 1);
+    if (p->_sign == _PB_EQUAL_) {
+      assert(p->_lits.size() == 1);
       vec<Lit> unit;
-      if (p->_rhs == 0) unit.push(~p->_lits[0]);
-      else if (p->_rhs == 1) unit.push(p->_lits[0]);
-      else assert(false);
+      if (p->_rhs == 0)
+        unit.push(~p->_lits[0]);
+      else if (p->_rhs == 1)
+        unit.push(p->_lits[0]);
+      else
+        assert(false);
       addHardClause(unit);
-    } else addHardClause(p->_lits);
+    } else
+      addHardClause(p->_lits);
   } else if (p->isCardinality()) {
     cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
 
@@ -179,9 +185,8 @@ void MaxSATFormula::addPBConstraint(PB *p) {
     // }
 
     // TODO: test PB constraints
-    pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign));
+    pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign, id));
   }
-
 }
 
 int MaxSATFormula::newVarName(char *varName) {
@@ -196,11 +201,10 @@ int MaxSATFormula::newVarName(char *varName) {
     _indexToName.insert(ni);
     // parse xi variable from PB files
     // only works if the variables are of that kind
-    assert (s[0] == 'x');
-    std::string varId = s.substr (1,s.size());
+    assert(s[0] == 'x');
+    std::string varId = s.substr(1, s.size());
     std::pair<int, int> vi(id, atoi(varId.c_str()));
     _varMap.insert(vi);
-
   }
   return id;
 }
@@ -237,38 +241,41 @@ void MaxSATFormula::convertPBtoMaxSAT() {
     setProblemType(_WEIGHTED_);
 }
 
-void MaxSATFormula::printCNFtoFile(std::string filename){
+void MaxSATFormula::printCNFtoFile(std::string filename) {
 
   std::ofstream file;
   file.open(filename + ".cnf");
   file << "p cnf " << nVars() << " " << nHard() << "\n";
 
-    for(int i = 0; i < nHard(); i++){
-     Hard &hard = getHardClause(i);
-     file << hard.print(getVarMap()) << "\n";
-   }
-  
+  for (int i = 0; i < nHard(); i++) {
+    Hard &hard = getHardClause(i);
+    file << hard.print(getVarMap()) << "\n";
+  }
 }
 
-void MaxSATFormula::printPBPtoFile(std::string filename){
+void MaxSATFormula::printPBPtoFile(std::string filename) {
   std::ofstream file;
   file.open(filename + ".pbp");
-  file << "pseudo-Boolean proof version 1.2" << "\n";
-  file << "f" << "\n";
-  file << "# 1" << "\n";
+  file << "pseudo-Boolean proof version 1.2"
+       << "\n";
+  file << "f"
+       << "\n";
+  file << "# 1"
+       << "\n";
 
-  for (int i = 0; i < nProofExpr(); i++){
-    PBP * pbp = getProofExpr(i);
+  for (int i = 0; i < nProofExpr(); i++) {
+    PBP *pbp = getProofExpr(i);
     file << pbp->print() << "\n";
   }
 
-  file << "# 0" << "\n";
+  file << "# 0"
+       << "\n";
 
-  for(int i = 0; i < nHard(); i++){
-     Hard &hard = getHardClause(i);
-     file << hard.printPBPu(getVarMap()) << "\n";
-   }
+  for (int i = 0; i < nHard(); i++) {
+    Hard &hard = getHardClause(i);
+    file << hard.printPBPu(getVarMap()) << "\n";
+  }
 
-  file << "w 1" << "\n";
-  
+  file << "w 1"
+       << "\n";
 }
