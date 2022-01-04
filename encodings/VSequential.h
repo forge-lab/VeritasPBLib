@@ -30,30 +30,26 @@
 
 #include "core/Solver.h"
 
+#include "../FormulaVeriPB.h"
 #include "Encodings.h"
 #include "core/SolverTypes.h"
-#include "../FormulaVeriPB.h"
 
 namespace openwbo {
 
 class VSequential : public Encodings {
 
 public:
-  VSequential() {
-  }
+  VSequential() {}
   ~VSequential() {}
 
   void encode(Card *card, MaxSATFormula *maxsat_formula);
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
-  std::pair<int,int> derive_unary_sum(vec<Lit>& left, vec<Lit>& right, int rhs);
-  std::pair<PBPred*,PBPred*> reify(Lit z, PB * pb);
-  int derive_sum(vec<PBPred*>& sum);
-  void derive_ordering(PBPred* p1, PBPred* p2);
-
-  MaxSATFormula *mx;
-  
+  std::pair<int, int> derive_unary_sum(vec<Lit> &left, vec<Lit> &right,
+                                       int rhs);
+  int derive_sum(vec<PBPred *> &sum);
+  void derive_ordering(PBPred *p1, PBPred *p2);
 };
 } // namespace openwbo
 

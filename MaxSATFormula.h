@@ -35,17 +35,17 @@
 #endif
 
 #include "FormulaPB.h"
-#include "MaxTypes.h"
 #include "FormulaVeriPB.h"
+#include "MaxTypes.h"
 
+#include <fstream>
 #include <map>
 #include <string>
-#include <fstream>
 
-using NSPACE::vec;
 using NSPACE::Lit;
 using NSPACE::lit_Undef;
 using NSPACE::mkLit;
+using NSPACE::vec;
 
 namespace openwbo {
 
@@ -81,48 +81,52 @@ public:
 class Hard {
   /*! The hard class is used to model the hard clauses in a MaxSAT formula. */
 public:
-  Hard(const vec<Lit> &hard, uint i = 0) { hard.copyTo(clause); id = i; }
+  Hard(const vec<Lit> &hard, uint i = 0) {
+    hard.copyTo(clause);
+    id = i;
+  }
 
   Hard() {}
   ~Hard() { clause.clear(); }
 
-
-  std::string printPBPu(varMap v){
+  std::string printPBPu(varMap v) {
     std::stringstream ss;
-    assert (clause.size() > 0);
+    assert(clause.size() > 0);
     int rhs = 1;
     ss << "u ";
-    for (int i = 0; i < clause.size(); i++){
+    for (int i = 0; i < clause.size(); i++) {
       if (sign(clause[i])) {
         ss << "1 ~x";
-        //rhs--;
-      } else ss << "1 x";
+        // rhs--;
+      } else
+        ss << "1 x";
       varMap::const_iterator iter = v.find(var(clause[i]));
       if (iter != v.end())
         ss << iter->second << " ";
       else
-        ss << (var(clause[i])+1) << " ";
+        ss << (var(clause[i]) + 1) << " ";
     }
     ss << ">= " << rhs << " ;";
     return ss.str();
   }
 
-  std::string print(varMap v){
+  std::string print(varMap v) {
     std::stringstream ss;
-    assert (clause.size() > 0);
-    for (int i = 0; i < clause.size(); i++){
-      if (sign(clause[i])) ss << "-";
+    assert(clause.size() > 0);
+    for (int i = 0; i < clause.size(); i++) {
+      if (sign(clause[i]))
+        ss << "-";
       varMap::const_iterator iter = v.find(var(clause[i]));
       if (iter != v.end())
         ss << iter->second << " ";
       else
-        ss << (var(clause[i])+1) << " ";
+        ss << (var(clause[i]) + 1) << " ";
     }
     ss << "0";
     return ss.str();
   }
   vec<Lit> clause; //!< Hard clause
-  uint id; // !< Clause id
+  uint id;         // !< Clause id
 };
 
 class MaxSATFormula {
@@ -161,9 +165,9 @@ public:
   /*! Add a new soft clause with predefined relaxation variables. */
   void addSoftClause(uint64_t weight, vec<Lit> &lits, vec<Lit> &vars);
 
-  int nVars();   // Number of variables.
-  int nSoft();   // Number of soft clauses.
-  int nHard();   // Number of hard clauses.
+  int nVars();             // Number of variables.
+  int nSoft();             // Number of soft clauses.
+  int nHard();             // Number of hard clauses.
   void newVar(int v = -1); // New variable. Set to the given value.
 
   Lit newLiteral(bool sign = false); // Make a new literal.
@@ -219,6 +223,10 @@ public:
 
   int nPB() { return pb_constraints.size(); }
 
+  int nConstr() {
+    return cardinality_constraints.size() + pb_constraints.size();
+  }
+
   void convertPBtoMaxSAT();
 
   void setFormat(int form) { format = form; }
@@ -231,20 +239,26 @@ public:
 
   void incId() { id++; }
 
-  int getIncId() { id++; return id; }
-  int getId() { return id; }
-
-  void printCNFtoFile(std::string filename);
-  void printPBPtoFile(std::string filename); 
-
-  PBP* getProofExpr(int i) { return proof_expr[i]; }
-  int nProofExpr() { return proof_expr.size(); }
-  void addProofExpr(PBP * pbp){
-    proof_expr.push(pbp);
+  int getIncId() {
+    id++;
+    return id;
   }
 
+  int getId() { return id; }
 
-  PBP* getProofClauses(int i) { return proof_cls[i]; }
+  int getIncProofLogId() {
+    proof_log_id++;
+    return proof_log_id;
+  }
+
+  void printCNFtoFile(std::string filename);
+  void printPBPtoFile(std::string filename);
+
+  PBP *getProofExpr(int i) { return proof_expr[i]; }
+  int nProofExpr() { return proof_expr.size(); }
+  void addProofExpr(PBP *pbp) { proof_expr.push(pbp); }
+
+  PBP *getProofClauses(int i) { return proof_cls[i]; }
   int nProofClauses() { return proof_cls.size(); }
 
 protected:
@@ -253,8 +267,8 @@ protected:
   vec<Soft> soft_clauses; //<! Stores the soft clauses of the MaxSAT formula.
   vec<Hard> hard_clauses; //<! Stores the hard clauses of the MaxSAT formula.
 
-  vec<PBP*> proof_expr; //<! Stores the proof expressions of the PB conversion
-  vec<PBP*> proof_cls; //<! Stores the proof CNF clauses 
+  vec<PBP *> proof_expr; //<! Stores the proof expressions of the PB conversion
+  vec<PBP *> proof_cls;  //<! Stores the proof CNF clauses
 
   // PB database
   //
@@ -277,10 +291,10 @@ protected:
   //
   nameMap _nameToIndex;  //<! Map from variable name to variable id.
   indexMap _indexToName; //<! Map from variable id to variable name.
-  varMap _varMap; //<! Map from variable id in CNF to variable id in PB.
+  varMap _varMap;        //<! Map from variable id in CNF to variable id in PB.
 
-
-  uint id; // <! Id for the clauses
+  uint id;           // <! Id for the clauses
+  uint proof_log_id; // <! Id used for the constraints in the proof log
 
   // Format
   //

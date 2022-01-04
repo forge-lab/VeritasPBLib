@@ -163,6 +163,7 @@ void MaxSATFormula::addPBConstraint(PB *p) {
 
   // Add constraint to formula data structure.
   id++; // updates the current id of the constraint
+  proof_log_id++;
   if (p->isClause()) {
     if (p->_sign == _PB_EQUAL_) {
       assert(p->_lits.size() == 1);
@@ -178,7 +179,6 @@ void MaxSATFormula::addPBConstraint(PB *p) {
       addHardClause(p->_lits);
   } else if (p->isCardinality()) {
     cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
-
   } else {
     // if (!p->_sign) {
     //   p->changeSign();

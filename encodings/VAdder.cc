@@ -33,33 +33,6 @@
 
 using namespace openwbo;
 
-std::pair<PBPred *, PBPred *> VAdder::reify(Lit z, PB *pb) {
-  vec<Lit> lits;
-  vec<int64_t> coeffs;
-  int64_t sum = 0;
-  for (int i = 0; i < pb->_lits.size(); i++) {
-    lits.push(~pb->_lits[i]);
-    coeffs.push(pb->_coeffs[i]);
-    sum += pb->_coeffs[i];
-  }
-
-  pb->addProduct(~z, pb->_rhs);
-  PBPred *pbp_geq =
-      new PBPred(mx->nProofExpr() + mx->nPB() + 1, pb, var(z) + 1, 0);
-  mx->addProofExpr(pbp_geq);
-
-  PB *pb_leq = new PB(lits, coeffs, sum - pb->_rhs + 1, _PB_GREATER_OR_EQUAL_);
-  pb_leq->addProduct(z, sum - pb->_rhs + 1);
-  PBPred *pbp_leq =
-      new PBPred(mx->nProofExpr() + mx->nPB() + 1, pb_leq, var(z) + 1, 1);
-  mx->addProofExpr(pbp_leq);
-
-  std::pair<PBPred *, PBPred *> res;
-  res.first = pbp_geq;
-  res.second = pbp_leq;
-  return res;
-}
-
 void VAdder::FA_extra(MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a,
                       Lit b, Lit c) {
 
@@ -181,12 +154,12 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
       pair_sum = reify(x_sum, pb_sum);
 
-      PBPp *pbp_geq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
+      PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
       pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
       pbp_geq->addition(pair_sum.first->_ctrid);
       pbp_geq->division(3);
       mx->addProofExpr(pbp_geq);
-      PBPp *pbp_geq_sum = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
+      PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
       pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
       pbp_geq_sum->addition(current_constr_id);
       mx->addProofExpr(pbp_geq_sum);
@@ -221,12 +194,12 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
       pair_sum = reify(x_sum, pb_sum);
 
-      PBPp *pbp_geq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
+      PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
       pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
       pbp_geq->addition(pair_sum.first->_ctrid);
       pbp_geq->division(3);
       mx->addProofExpr(pbp_geq);
-      PBPp *pbp_geq_sum = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
+      PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
       pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
       pbp_geq_sum->addition(current_constr_id);
       mx->addProofExpr(pbp_geq_sum);

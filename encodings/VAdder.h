@@ -72,9 +72,6 @@ protected:
                        std::vector<uint64_t> &ys);
   void numToBits(std::vector<uint64_t> &bits, uint64_t n, uint64_t number);
   uint64_t ld64(const uint64_t x);
-
-  std::pair<PBPred *, PBPred *> reify(Lit z, PB *pb);
-  MaxSATFormula *mx;
 };
 } // namespace openwbo
 
