@@ -181,11 +181,11 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
       pair_sum = reify(x_sum, pb_sum);
 
-      PBPp *pbp_geq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
-      pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
-      pbp_geq->addition(pair_sum.first->_ctrid);
-      pbp_geq->division(3);
-      mx->addProofExpr(pbp_geq);
+      // PBPp *pbp_geq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
+      // pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
+      // pbp_geq->addition(pair_sum.first->_ctrid);
+      // pbp_geq->division(3);
+      // mx->addProofExpr(pbp_geq);
       PBPp *pbp_leq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
       pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
       pbp_leq->addition(pair_sum.second->_ctrid);
@@ -226,11 +226,11 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
       pair_sum = reify(x_sum, pb_sum);
 
-      PBPp *pbp_geq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
-      pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
-      pbp_geq->addition(pair_sum.first->_ctrid);
-      pbp_geq->division(3);
-      mx->addProofExpr(pbp_geq);
+      // PBPp *pbp_geq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
+      // pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
+      // pbp_geq->addition(pair_sum.first->_ctrid);
+      // pbp_geq->division(3);
+      // mx->addProofExpr(pbp_geq);
       PBPp *pbp_leq = new PBPp(mx->nProofExpr() + mx->nPB() + 1);
       pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
       pbp_leq->addition(pair_sum.second->_ctrid);
