@@ -68,8 +68,8 @@ protected:
   void adderTree(MaxSATFormula *maxsat_formula,
                  std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
                  int original_constr_id);
-  void greaterThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
-                          std::vector<uint64_t> &ys);
+  void lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
+                       std::vector<uint64_t> &ys);
   void numToBits(std::vector<uint64_t> &bits, uint64_t n, uint64_t number);
   uint64_t ld64(const uint64_t x);
 
