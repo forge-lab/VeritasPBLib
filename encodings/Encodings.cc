@@ -28,6 +28,7 @@
 
 #include "Encodings.h"
 #include "UAdder.h"
+#include "UGTE.h"
 #include "USequential.h"
 #include "UTotalizer.h"
 #include "VAdder.h"
@@ -55,7 +56,8 @@ void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula) {
 void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula) {
 
   if (_pb_type == _PB_GTE_) {
-    assert(false);
+    UGTE *gte = new UGTE();
+    gte->encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_ADDER_) {
     UAdder *add = new UAdder();
     add->encode(pb, maxsat_formula);
