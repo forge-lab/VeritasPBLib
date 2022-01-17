@@ -27,40 +27,24 @@
  *
  */
 
-#ifndef UGTE_h
-#define UGTE_h
+#ifndef VGTE_h
+#define VGTE_h
 
 #include "core/Solver.h"
 
 #include "Encodings.h"
+#include "UGTE.h"
 #include "core/SolverTypes.h"
 #include <map>
 #include <utility>
 #include <vector>
 
 namespace openwbo {
-struct wlitt {
-  Lit lit;
-  uint64_t weight;
-};
-struct less_than_wlitt {
-  inline bool operator()(const wlitt &wl1, const wlitt &wl2) {
-    return (wl1.weight < wl2.weight);
-  }
-};
-struct wlit_sumt {
-  inline uint64_t operator()(const uint64_t &wl1, const wlitt &wl2) {
-    return (wl1 + wl2.weight);
-  }
-};
-typedef std::map<uint64_t, Lit> wlit_mapt;
-typedef std::vector<wlitt> weightedlitst;
-typedef std::pair<uint64_t, Lit> wlit_pairt;
-class UGTE : public Encodings {
+class VGTE : public Encodings {
 
 public:
-  UGTE() { current_pb_rhs = 0; }
-  ~UGTE() {}
+  VGTE() { current_pb_rhs = 0; }
+  ~VGTE() {}
 
   // Encode constraint.
   void encode(PB *pb, MaxSATFormula *maxsat_formula);

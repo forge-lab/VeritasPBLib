@@ -32,6 +32,7 @@
 #include "USequential.h"
 #include "UTotalizer.h"
 #include "VAdder.h"
+#include "VGTE.h"
 #include "VSequential.h"
 
 using namespace openwbo;
@@ -62,7 +63,8 @@ void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula) {
     UAdder *add = new UAdder();
     add->encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_VGTE_) {
-    assert(false);
+    VGTE *gte = new VGTE();
+    gte->encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_VADDER_) {
     VAdder *add = new VAdder();
     add->encode(pb, maxsat_formula);
