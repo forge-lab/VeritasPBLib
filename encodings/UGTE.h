@@ -63,15 +63,7 @@ typedef std::pair<uint64_t, Lit> wlit_pairt;
 class UGTE : public Encodings {
 
 public:
-  UGTE() {
-    // current_pb_rhs = -1; // -1 corresponds to an unitialized value
-    current_pb_rhs = 0;
-    nb_clauses = 0;
-    nb_variables = 0;
-
-    nb_clauses_expected = 0;
-    nb_current_variables = 0;
-  }
+  UGTE() { current_pb_rhs = 0; }
   ~UGTE() {}
 
   // Encode constraint.
@@ -81,8 +73,6 @@ protected:
   void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
   void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
               vec<uint64_t> &coeffs, uint64_t rhs);
-
-  void printLit(Lit l) { printf("%s%d\n", sign(l) ? "-" : "", var(l) + 1); }
 
   bool encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
                  const weightedlitst &iliterals, wlit_mapt &oliterals);
@@ -99,13 +89,6 @@ protected:
   wlit_mapt pb_oliterals;
   vec<Lit> unit_lits;
   vec<uint64_t> unit_coeffs;
-
-  // Number of variables and clauses for statistics.
-  int nb_variables;
-  int nb_clauses;
-
-  int nb_clauses_expected;
-  int nb_current_variables;
 };
 
 } // namespace openwbo

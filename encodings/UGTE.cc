@@ -38,13 +38,15 @@ struct less_than_wlitt {
   }
 };
 
+// create new literal
 Lit UGTE::getNewLit(MaxSATFormula *maxsat_formula) {
   Lit p = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
-  nb_variables++;
   return p;
 }
 
+// get variable with `weight` (coefficient) from the output literals used for
+// the clauses (variables used in the PB constraint and fresh variables)
 Lit UGTE::get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
                   uint64_t weight) {
   wlit_mapt::iterator it = oliterals.find(weight);
@@ -55,14 +57,13 @@ Lit UGTE::get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
   return oliterals[weight];
 }
 
+// recursive algorithm that actually encodes the PB constraint
 bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
                      const weightedlitst &iliterals, wlit_mapt &oliterals) {
-
   if (iliterals.size() == 0 || k == 0)
     return false;
 
   if (iliterals.size() == 1) {
-
     oliterals.insert(
         wlit_pairt(iliterals.front().weight, iliterals.front().lit));
     return true;
@@ -70,31 +71,28 @@ bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
 
   unsigned int size = iliterals.size();
 
-  // formulat lformula,rformula;
   weightedlitst linputs, rinputs;
   wlit_mapt loutputs, routputs;
 
+  // split input literals in half
   unsigned int lsize = size >> 1;
-  // unsigned int rsize=size-lsize;
   weightedlitst::const_iterator myit = iliterals.begin();
   weightedlitst::const_iterator myit1 = myit + lsize;
   weightedlitst::const_iterator myit2 = iliterals.end();
-
   linputs.insert(linputs.begin(), myit, myit1);
   rinputs.insert(rinputs.begin(), myit1, myit2);
 
-  /*wlitt init_wlit;
-  init_wlit.lit = lit_Undef;
-  init_wlit.weight=0;*/
+  // bound output to rhs
   wlit_sumt wlit_sum;
   uint64_t lk =
       std::accumulate(linputs.begin(), linputs.end(), uint64_t(0), wlit_sum);
   uint64_t rk =
       std::accumulate(rinputs.begin(), rinputs.end(), uint64_t(0), wlit_sum);
-
   lk = k >= lk ? lk : k;
   rk = k >= rk ? rk : k;
 
+  // process recursion (with fresh constructed left and right literals)
+  // -> literal lists are different for each call
   bool result = encodeLeq(lk, maxsat_formula, linputs, loutputs);
   if (!result)
     return result;
@@ -102,71 +100,51 @@ bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
   if (!result)
     return result;
 
+  // bind output literals to literals that represent a sum of at least the coeff
   {
     assert(!loutputs.empty());
 
-    for (wlit_mapt::iterator mit = loutputs.begin(); mit != loutputs.end();
-         mit++) {
+    for (wlit_mapt::iterator left_it = loutputs.begin();
+         left_it != loutputs.end(); left_it++) {
 
-      if (mit->first > k) {
-        addBinaryClause(maxsat_formula, ~mit->second,
+      if (left_it->first > k) {
+        addBinaryClause(maxsat_formula, ~left_it->second,
                         get_var(maxsat_formula, oliterals, k));
-        nb_clauses++;
       } else {
-        addBinaryClause(maxsat_formula, ~mit->second,
-                        get_var(maxsat_formula, oliterals, mit->first));
-        nb_clauses++;
-        // clause.push_back(get_var(auxvars,oliterals,l.first));
+        addBinaryClause(maxsat_formula, ~left_it->second,
+                        get_var(maxsat_formula, oliterals, left_it->first));
       }
-
-      // formula.push_back(std::move(clause));
     }
   }
 
   {
     assert(!routputs.empty());
-    for (wlit_mapt::iterator mit = routputs.begin(); mit != routputs.end();
-         mit++) {
 
-      if (mit->first > k) {
-        addBinaryClause(maxsat_formula, ~mit->second,
+    for (wlit_mapt::iterator right_it = routputs.begin();
+         right_it != routputs.end(); right_it++) {
+
+      if (right_it->first > k) {
+        addBinaryClause(maxsat_formula, ~right_it->second,
                         get_var(maxsat_formula, oliterals, k));
-        nb_clauses++;
-        // clause.push_back(get_var(auxvars,oliterals,k));
       } else {
-        addBinaryClause(maxsat_formula, ~mit->second,
-                        get_var(maxsat_formula, oliterals, mit->first));
-        nb_clauses++;
-        // clause.push_back(get_var(auxvars,oliterals,r.first));
+        addBinaryClause(maxsat_formula, ~right_it->second,
+                        get_var(maxsat_formula, oliterals, right_it->first));
       }
-
-      // formula.push_back(std::move(clause));
     }
   }
 
-  // if(!lformula.empty() && !rformula.empty())
-  {
-    for (wlit_mapt::iterator lit = loutputs.begin(); lit != loutputs.end();
-         lit++) {
-      for (wlit_mapt::iterator rit = routputs.begin(); rit != routputs.end();
-           rit++) {
-        /*clauset clause;
-        clause.push_back(-l.second);
-        clause.push_back(-r.second);*/
-        uint64_t tw = lit->first + rit->first;
-        if (tw > k) {
-          addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
-                           get_var(maxsat_formula, oliterals, k));
-          nb_clauses++;
-          // clause.push_back(get_var(auxvars,oliterals,k));
-        } else {
-          addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
-                           get_var(maxsat_formula, oliterals, tw));
-          nb_clauses++;
-          // clause.push_back(get_var(auxvars,oliterals,tw));
-        }
-
-        // formula.push_back(std::move(clause));
+  // for each combination of values from left and right side
+  for (wlit_mapt::iterator lit = loutputs.begin(); lit != loutputs.end();
+       lit++) {
+    for (wlit_mapt::iterator rit = routputs.begin(); rit != routputs.end();
+         rit++) {
+      uint64_t tw = lit->first + rit->first;
+      if (tw > k) {
+        addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
+                         get_var(maxsat_formula, oliterals, k));
+      } else {
+        addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
+                         get_var(maxsat_formula, oliterals, tw));
       }
     }
   }
@@ -231,9 +209,6 @@ void UGTE::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
     exit(_ERROR_);
   }
 
-  nb_variables = 0;
-  nb_clauses = 0;
-
   vec<Lit> simp_lits;
   vec<uint64_t> simp_coeffs;
   lits.copyTo(simp_lits);
@@ -287,22 +262,6 @@ void UGTE::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
       break;
     }
   }
-  // addUnitClause(S,~pb_oliterals.rbegin()->second);
-  /*
-  if (pb_oliterals.rbegin()->first != rhs+1){
-        printf("%d - %d\n",pb_oliterals.rbegin()->first,rhs);
-        for(wlit_mapt::reverse_iterator
-  rit=pb_oliterals.rbegin();rit!=pb_oliterals.rend();rit++)
-  {
-        printf("rit->first %d\n",rit->first);
-  }
-  }
-  */
-  // assert (pb_oliterals.rbegin()->first == rhs+1);
-  // printLit(~pb_oliterals.rbegin()->second);
-  /* ... PUT CODE HERE FOR CREATING THE ENCODING ... */
-  /* ... do not forget to sort the coefficients so that GTE is more efficient
-   * ... */
 
   current_pb_rhs = rhs;
 }
