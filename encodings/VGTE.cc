@@ -38,6 +38,165 @@ struct less_than_wlitt {
   }
 };
 
+// left...A, right...B
+void VGTE::try_all_values(weightedlitst &left, weightedlitst &right,
+                          Lit &z_eq) {
+  int constr_outer_id = 0;
+  for (uint left_i = 0; left_i < left.size(); left_i++) {
+    int constr_inner_id = 0;
+    for (uint right_i = 0; right_i < right.size(); right_i++) {
+      vec<Lit> lits;
+      lits.push(z_eq);
+      if (left_i > 0) {
+        lits.push(~left[left_i].lit);
+      }
+      if (right_i > 0) {
+        lits.push(~right[right_i].lit);
+      }
+      if (left_i < left.size() - 1) {
+        lits.push(left[left_i + 1].lit);
+      }
+      if (right_i < right.size() - 1) {
+        lits.push(right[right_i + 1].lit);
+      }
+      PBPu *pbp_single_try = new PBPu(mx->getIncProofLogId(), lits);
+      mx->addProofExpr(pbp_single_try);
+      if (constr_inner_id) {
+        PBPp *pbp_inner = new PBPp(mx->getIncProofLogId());
+        pbp_inner->addition(constr_inner_id, pbp_single_try->_ctrid);
+        mx->addProofExpr(pbp_inner);
+        constr_inner_id = pbp_inner->_ctrid;
+      } else {
+        constr_inner_id = pbp_single_try->_ctrid;
+      }
+    }
+    PBPp *pbp_outer = new PBPp(mx->getIncProofLogId());
+    pbp_outer->saturation(constr_inner_id);
+    if (constr_outer_id) {
+      pbp_outer->addition(constr_outer_id);
+    }
+    mx->addProofExpr(pbp_outer);
+    constr_outer_id = pbp_outer->_ctrid;
+  }
+  PBPp *pbp_final = new PBPp(mx->getIncProofLogId());
+  pbp_final->saturation(constr_outer_id);
+  mx->addProofExpr(pbp_final);
+}
+
+weightedlitst VGTE::sort_to_list(wlit_mapt &map) {
+  weightedlitst list;
+  wlitt wl;
+  wl.weight = 0;
+  wl.lit = map.end()->second;
+  list.push_back(wl);
+  for (wlit_mapt::iterator it = map.begin(); it != map.end(); it++) {
+    wlitt wl;
+    wl.lit = it->second;
+    wl.weight = it->first;
+    list.push_back(wl);
+  }
+  less_than_wlitt lt_wlit;
+  std::sort(list.begin(), list.end(), lt_wlit);
+  return list;
+}
+
+std::pair<int, int> VGTE::derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
+                                                  wlit_mapt &left,
+                                                  wlit_mapt &right,
+                                                  wlit_mapt &current) {
+  // construct left hand site of the preserving equality
+  vec<int64_t> coeffs;
+  vec<Lit> lits;
+  weightedlitst left_list = sort_to_list(left);
+  weightedlitst right_list = sort_to_list(right);
+  weightedlitst current_list = sort_to_list(current);
+  int64_t weight_prev = 0;
+  for (uint i = 1; i < left_list.size(); i++) {
+    coeffs.push(left_list[i].weight - weight_prev);
+    lits.push(left_list[i].lit);
+    weight_prev = left_list[i].weight;
+  }
+  weight_prev = 0;
+  for (uint i = 1; i < right_list.size(); i++) {
+    coeffs.push(right_list[i].weight - weight_prev);
+    lits.push(right_list[i].lit);
+    weight_prev = right_list[i].weight;
+  }
+
+  // log ordering
+  PBPred *p_prev = NULL;
+  for (wlit_mapt::iterator current_it = current.begin();
+       current_it != current.end(); current_it++) {
+    PB *pb_single_var =
+        new PB(lits, coeffs, current_it->first, _PB_GREATER_OR_EQUAL_);
+    std::pair<PBPred *, PBPred *> p = reify(current_it->second, pb_single_var);
+    if (p_prev != NULL) {
+      assert(p_prev);
+      derive_ordering(p_prev, p.first);
+    }
+    p_prev = p.second;
+  }
+
+  // reify constraints to be derived
+  weight_prev = 0;
+  for (weightedlitst::iterator current_it = current_list.begin();
+       current_it != current_list.end(); current_it++) {
+    coeffs.push(current_it->weight - weight_prev);
+    lits.push(~current_it->lit);
+    weight_prev = current_it->weight;
+  }
+  Lit z_geq = getNewLit(maxsat_formula);
+  PB *pb_full_geq = new PB(lits, coeffs, weight_prev, _PB_GREATER_OR_EQUAL_);
+  std::pair<PBPred *, PBPred *> p_geq = reify(z_geq, pb_full_geq);
+
+  int64_t sum = 0;
+  for (int i = 0; i < lits.size(); i++) {
+    lits[i] = ~lits[i];
+    sum += coeffs[i];
+  }
+  Lit z_leq = getNewLit(maxsat_formula);
+  PB *pb_full_leq =
+      new PB(lits, coeffs, sum - weight_prev, _PB_GREATER_OR_EQUAL_);
+  std::pair<PBPred *, PBPred *> p_leq = reify(z_leq, pb_full_leq);
+
+  Lit z_eq = getNewLit(maxsat_formula);
+  vec<int64_t> coeffs_eq;
+  vec<Lit> lits_eq;
+  coeffs_eq.growTo(2, 1);
+  lits_eq.push(z_geq);
+  lits_eq.push(z_leq);
+  PB *pb_full_eq = new PB(lits_eq, coeffs_eq, 2, _PB_GREATER_OR_EQUAL_);
+  reify(z_eq, pb_full_eq);
+
+  try_all_values(left_list, right_list, z_eq);
+
+  // derive constraint to be derived from its reification
+  uint64_t sum_max = left_list[left_list.size() - 1].weight +
+                     right_list[right_list.size() - 1].weight;
+  vec<Lit> lits_geq;
+  lits_geq.push(z_geq);
+  PBPu *pbp_rup_geq = new PBPu(mx->getIncProofLogId(), lits_geq);
+  mx->addProofExpr(pbp_rup_geq);
+  PBPp *pbp_p_geq = new PBPp(mx->getIncProofLogId());
+  pbp_p_geq->multiplication(pbp_rup_geq->_ctrid, sum_max);
+  pbp_p_geq->addition(p_geq.first->_ctrid);
+  mx->addProofExpr(pbp_p_geq);
+
+  vec<Lit> lits_leq;
+  lits_leq.push(z_leq);
+  PBPu *pbp_rup_leq = new PBPu(mx->getIncProofLogId(), lits_leq);
+  mx->addProofExpr(pbp_rup_leq);
+  PBPp *pbp_p_leq = new PBPp(mx->getIncProofLogId());
+  pbp_p_leq->multiplication(pbp_rup_leq->_ctrid, sum_max);
+  pbp_p_leq->addition(p_leq.first->_ctrid);
+  mx->addProofExpr(pbp_p_leq);
+
+  std::pair<int, int> res;
+  res.first = pbp_p_geq->_ctrid;
+  res.second = pbp_p_leq->_ctrid;
+  return res;
+}
+
 // create new literal
 Lit VGTE::getNewLit(MaxSATFormula *maxsat_formula) {
   Lit p = mkLit(maxsat_formula->nVars(), false);
@@ -148,6 +307,8 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
       }
     }
   }
+
+  derive_sparse_unary_sum(maxsat_formula, loutputs, routputs, oliterals);
 
   return true;
 }

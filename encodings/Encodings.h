@@ -73,6 +73,7 @@ protected:
   // Auxillary methods for proof logging
   MaxSATFormula *mx;
   std::pair<PBPred *, PBPred *> reify(Lit z, PB *pb);
+  void derive_ordering(PBPred *p1, PBPred *p2);
 };
 } // namespace openwbo
 

@@ -136,7 +136,7 @@ private:
 // to be added
 class PBPu : public PBP {
 public:
-  PBPu(int ctrid, vec<Lit> clause) {
+  PBPu(int ctrid, vec<Lit> &clause) {
     clause.copyTo(_clause);
     _ctrid = ctrid;
   }
@@ -147,12 +147,12 @@ public:
     int rhs = 1;
     for (int i = 0; i < _clause.size(); i++) {
       if (sign(_clause[i])) {
-        ss << "1 ~" << (var(_clause[i]) + 1);
+        ss << "1 ~x" << (var(_clause[i]) + 1) << " ";
         // rhs--;
       } else
-        ss << "1 " << (var(_clause[i]) + 1);
+        ss << "1 x" << (var(_clause[i]) + 1) << " ";
     }
-    ss << " >= " << rhs << " ;";
+    ss << ">= " << rhs << " ;";
     return ss.str();
   }
 

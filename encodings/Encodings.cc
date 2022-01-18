@@ -149,3 +149,15 @@ std::pair<PBPred *, PBPred *> Encodings::reify(Lit z, PB *pb) {
   res.second = pbp_leq;
   return res;
 }
+
+void Encodings::derive_ordering(PBPred *p1, PBPred *p2) {
+  int d = 0;
+  for (int i = 0; i < p1->_ctr->_coeffs.size(); i++) {
+    if (var(p1->_ctr->_lits[i]) + 1 != p1->_v)
+      d += p1->_ctr->_coeffs[i];
+  }
+  PBPp *pbp = new PBPp(mx->getIncProofLogId());
+  pbp->addition(p1->_ctrid, p2->_ctrid);
+  pbp->division(d);
+  mx->addProofExpr(pbp);
+}

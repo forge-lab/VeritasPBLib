@@ -69,6 +69,13 @@ protected:
   wlit_mapt pb_oliterals;
   vec<Lit> unit_lits;
   vec<uint64_t> unit_coeffs;
+
+  // proof logging (left...A, right...B, current...E)
+  std::pair<int, int> derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
+                                              wlit_mapt &left, wlit_mapt &right,
+                                              wlit_mapt &current);
+  weightedlitst sort_to_list(wlit_mapt &map);
+  void try_all_values(weightedlitst &left, weightedlitst &right, Lit &z_eq);
 };
 
 } // namespace openwbo
