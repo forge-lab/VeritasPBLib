@@ -52,10 +52,11 @@ public:
 protected:
   void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
   void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
-              vec<uint64_t> &coeffs, uint64_t rhs);
+              vec<uint64_t> &coeffs, uint64_t rhs, int pb_id);
 
   bool encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
-                 const weightedlitst &iliterals, wlit_mapt &oliterals);
+                 const weightedlitst &iliterals, wlit_mapt &oliterals,
+                 vec<int> &geq, vec<int> &leq);
   Lit getNewLit(MaxSATFormula *maxsat_formula);
   Lit get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
               uint64_t weight);

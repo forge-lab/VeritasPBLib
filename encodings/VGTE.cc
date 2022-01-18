@@ -218,7 +218,8 @@ Lit VGTE::get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
 
 // recursive algorithm that actually encodes the PB constraint
 bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
-                     const weightedlitst &iliterals, wlit_mapt &oliterals) {
+                     const weightedlitst &iliterals, wlit_mapt &oliterals,
+                     vec<int> &geq, vec<int> &leq) {
   if (iliterals.size() == 0 || k == 0)
     return false;
 
@@ -252,10 +253,10 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
 
   // process recursion (with fresh constructed left and right literals)
   // -> literal lists are different for each call
-  bool result = encodeLeq(lk, maxsat_formula, linputs, loutputs);
+  bool result = encodeLeq(lk, maxsat_formula, linputs, loutputs, geq, leq);
   if (!result)
     return result;
-  result = result && encodeLeq(rk, maxsat_formula, rinputs, routputs);
+  result = result && encodeLeq(rk, maxsat_formula, rinputs, routputs, geq, leq);
   if (!result)
     return result;
 
@@ -308,7 +309,10 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
     }
   }
 
-  derive_sparse_unary_sum(maxsat_formula, loutputs, routputs, oliterals);
+  std::pair<int, int> res_pair =
+      derive_sparse_unary_sum(maxsat_formula, loutputs, routputs, oliterals);
+  geq.push(res_pair.first);
+  leq.push(res_pair.second);
 
   return true;
 }
@@ -355,11 +359,11 @@ void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
     rhs = s - rhs;
   }
 
-  encode(maxsat_formula, lits, coeffs, rhs);
+  encode(maxsat_formula, lits, coeffs, rhs, pb->_id);
 }
 
 void VGTE::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
-                  vec<uint64_t> &coeffs, uint64_t rhs) {
+                  vec<uint64_t> &coeffs, uint64_t rhs, int pb_id) {
   // FIXME: do not change coeffs in this method. Make coeffs const.
 
   // If the rhs is larger than INT32_MAX is not feasible to encode this
@@ -413,7 +417,18 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
   }
   less_than_wlitt lt_wlit;
   std::sort(iliterals.begin(), iliterals.end(), lt_wlit);
-  encodeLeq(rhs + 1, maxsat_formula, iliterals, pb_oliterals);
+  vec<int> geq;
+  vec<int> leq;
+  encodeLeq(rhs + 1, maxsat_formula, iliterals, pb_oliterals, geq, leq);
+
+  // begin proof log output
+  PBPp *pbp_output = new PBPp(mx->getIncProofLogId());
+  pbp_output->addition(pb_id, geq[0]);
+  for (int i = 1; i < geq.size(); i++) {
+    pbp_output->addition(geq[i]);
+  }
+  mx->addProofExpr(pbp_output);
+  // end proof log output
 
   for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
        rit != pb_oliterals.rend(); rit++) {
