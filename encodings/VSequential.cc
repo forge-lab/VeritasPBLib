@@ -59,18 +59,6 @@ int VSequential::derive_sum(vec<PBPred *> &sum) {
   return c;
 }
 
-void VSequential::derive_ordering(PBPred *p1, PBPred *p2) {
-  int d = 0;
-  for (int i = 0; i < p1->_ctr->_coeffs.size(); i++) {
-    if (var(p1->_ctr->_lits[i]) + 1 != p1->_v)
-      d += p1->_ctr->_coeffs[i];
-  }
-  PBPp *pbp = new PBPp(mx->getIncProofLogId());
-  pbp->addition(p1->_ctrid, p2->_ctrid);
-  pbp->division(d);
-  mx->addProofExpr(pbp);
-}
-
 std::pair<int, int> VSequential::derive_unary_sum(vec<Lit> &left,
                                                   vec<Lit> &right, int rhs) {
   vec<PBPred *> sum_leq;

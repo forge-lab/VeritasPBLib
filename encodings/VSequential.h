@@ -49,7 +49,6 @@ private:
   std::pair<int, int> derive_unary_sum(vec<Lit> &left, vec<Lit> &right,
                                        int rhs);
   int derive_sum(vec<PBPred *> &sum);
-  void derive_ordering(PBPred *p1, PBPred *p2);
 };
 } // namespace openwbo
 

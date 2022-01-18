@@ -28,9 +28,11 @@
 
 #include "Encodings.h"
 #include "UAdder.h"
+#include "UGTE.h"
 #include "USequential.h"
 #include "UTotalizer.h"
 #include "VAdder.h"
+#include "VGTE.h"
 #include "VSequential.h"
 
 using namespace openwbo;
@@ -55,12 +57,14 @@ void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula) {
 void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula) {
 
   if (_pb_type == _PB_GTE_) {
-    assert(false);
+    UGTE *gte = new UGTE();
+    gte->encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_ADDER_) {
     UAdder *add = new UAdder();
     add->encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_VGTE_) {
-    assert(false);
+    VGTE *gte = new VGTE();
+    gte->encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_VADDER_) {
     VAdder *add = new VAdder();
     add->encode(pb, maxsat_formula);
@@ -144,4 +148,16 @@ std::pair<PBPred *, PBPred *> Encodings::reify(Lit z, PB *pb) {
   res.first = pbp_geq;
   res.second = pbp_leq;
   return res;
+}
+
+void Encodings::derive_ordering(PBPred *p1, PBPred *p2) {
+  int d = 0;
+  for (int i = 0; i < p1->_ctr->_coeffs.size(); i++) {
+    if (var(p1->_ctr->_lits[i]) + 1 != p1->_v)
+      d += p1->_ctr->_coeffs[i];
+  }
+  PBPp *pbp = new PBPp(mx->getIncProofLogId());
+  pbp->addition(p1->_ctrid, p2->_ctrid);
+  pbp->division(d);
+  mx->addProofExpr(pbp);
 }
