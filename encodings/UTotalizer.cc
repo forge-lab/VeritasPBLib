@@ -3,7 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob
+ * Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +30,8 @@
 
 using namespace openwbo;
 
-void UTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right,
-                      vec<Lit> &output) {
+void UTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left,
+                       vec<Lit> &right, vec<Lit> &output) {
   assert(output.size() == left.size() + right.size());
   // We only need to count the sums up to k.
   for (int i = 0; i <= left.size(); i++) {
@@ -38,7 +39,7 @@ void UTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &
       if (i == 0 && j == 0)
         continue;
 
-      if (i + j > _rhs+1)
+      if (i + j > _rhs + 1)
         continue;
 
       if (i == 0) {
@@ -46,13 +47,15 @@ void UTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &
       } else if (j == 0) {
         addBinaryClause(maxsat_formula, ~left[i - 1], output[i - 1]);
       } else {
-        addTernaryClause(maxsat_formula, ~left[i - 1], ~right[j - 1], output[i + j - 1]);
+        addTernaryClause(maxsat_formula, ~left[i - 1], ~right[j - 1],
+                         output[i + j - 1]);
       }
     }
   }
 }
 
-void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits){
+void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
+                       int64_t k) {
   vec<Lit> left;
   vec<Lit> right;
 
@@ -88,19 +91,23 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits){
   }
 
   if (left.size() > 1)
-    toCNF(maxsat_formula, left);
+    toCNF(maxsat_formula, left, k);
   if (right.size() > 1)
-    toCNF(maxsat_formula, right);
+    toCNF(maxsat_formula, right, k);
   adder(maxsat_formula, left, right, lits);
+
+  // k-simplification
+  lits.shrink(lits.size() - k);
 }
 
-void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
-  assert (sign != _PB_EQUAL_);
+void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
+                        pb_Sign sign) {
+  assert(sign != _PB_EQUAL_);
 
   vec<Lit> lits;
   vec<Lit> pb_outlits;
   vec<int64_t> coeffs;
-  
+
   card->_lits.copyTo(lits);
 
   // code adapted from Open-WBO
@@ -108,25 +115,28 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign)
   coeffs.growTo(lits.size(), 1);
 
   _rhs = card->_rhs;
-  
+
   // transform it into <=
-  if (sign == _PB_GREATER_OR_EQUAL_){
+  if (sign == _PB_GREATER_OR_EQUAL_) {
     int s = 0;
-      for (int i = 0; i < coeffs.size(); i++) {
-        s += coeffs[i];
-        lits[i] = ~(lits[i]);
-      }
-      _rhs = s - _rhs;
+    for (int i = 0; i < coeffs.size(); i++) {
+      s += coeffs[i];
+      lits[i] = ~(lits[i]);
+    }
+    _rhs = s - _rhs;
   }
-  
+
   // simplifications
   // all literals must be assigned to 0
-  if (_rhs == 0){
-    for (int i = 0; i < lits.size(); i++){
+  if (_rhs == 0) {
+    for (int i = 0; i < lits.size(); i++) {
       addUnitClause(maxsat_formula, ~lits[i]);
     }
     return;
   }
+
+  uint64_t k = _rhs;
+  k++;
 
   for (int i = 0; i < lits.size(); i++) {
     Lit p = mkLit(maxsat_formula->nVars(), false);
@@ -136,29 +146,27 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign)
 
   lits.copyTo(cardinality_inlits);
 
-  toCNF(maxsat_formula, cardinality_outlits);
+  toCNF(maxsat_formula, cardinality_outlits, k);
   assert(cardinality_inlits.size() == 0);
 
   for (int i = _rhs; i < cardinality_outlits.size(); i++)
-      addUnitClause(maxsat_formula, ~cardinality_outlits[i]);
-
+    addUnitClause(maxsat_formula, ~cardinality_outlits[i]);
 }
 
-void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula){
+void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula) {
 
-    switch (card->_sign){
-      case _PB_EQUAL_:
-        encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-        encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
-        break;
-      case _PB_LESS_OR_EQUAL_:
-        encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
-        break;
-      case _PB_GREATER_OR_EQUAL_:
-        encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-        break;
-      default:
-        assert(false);
-    }
-
+  switch (card->_sign) {
+  case _PB_EQUAL_:
+    encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_LESS_OR_EQUAL_:
+    encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_GREATER_OR_EQUAL_:
+    encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    break;
+  default:
+    assert(false);
+  }
 }

@@ -3,7 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob
+ * Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,24 +39,21 @@ namespace openwbo {
 class UTotalizer : public Encodings {
 
 public:
-  UTotalizer() {
-  }
+  UTotalizer() {}
   ~UTotalizer() {}
 
   void encode(Card *card, MaxSATFormula *maxsat_formula);
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
-  void adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right, vec<Lit> &output);
-  void toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits);
+  void adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right,
+             vec<Lit> &output);
+  void toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits, int64_t k);
   int _rhs;
   vec<Lit> cardinality_inlits; // Stores the inputs of the cardinality
                                // constraint encoding for the totalizer encoding
   vec<Lit> cardinality_outlits; // Stores the outputs of the cardinality
                                 // constraint encoding for incremental solving
-
-
-
 };
 } // namespace openwbo
 
