@@ -30,6 +30,7 @@
 #include "VGTE.h"
 #include <algorithm>
 #include <numeric>
+
 using namespace openwbo;
 
 struct less_than_wlitt {

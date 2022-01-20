@@ -26,7 +26,6 @@
  */
 
 #include "VSequential.h"
-#include <iostream>
 
 using namespace openwbo;
 
@@ -168,7 +167,6 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
 }
 
 void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula) {
-
   mx = maxsat_formula;
 
   switch (card->_sign) {

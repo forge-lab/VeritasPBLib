@@ -29,7 +29,6 @@
 
 #include "VAdder.h"
 #include <algorithm>
-#include <numeric>
 
 using namespace openwbo;
 
@@ -272,6 +271,7 @@ void VAdder::numToBits(std::vector<uint64_t> &bits, uint64_t n,
 }
 
 void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula) {
+  mx = maxsat_formula;
 
   switch (pb->_sign) {
   case _PB_EQUAL_:
@@ -323,7 +323,6 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
                     vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign,
                     int pb_id) {
   _output.clear();
-  mx = maxsat_formula;
 
   uint64_t nb = ld64(rhs); // number of bits
   Lit u = lit_Undef;
