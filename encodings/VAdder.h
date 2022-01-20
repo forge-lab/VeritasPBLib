@@ -56,8 +56,7 @@ protected:
 
   // Encode constraint.
   void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
-              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign,
-              int original_constr_id);
+              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign, int pb_id);
 
   void FA_extra(MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a, Lit b,
                 Lit c);
@@ -67,7 +66,7 @@ protected:
   Lit HA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b);
   void adderTree(MaxSATFormula *maxsat_formula,
                  std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
-                 int original_constr_id);
+                 int pb_id, uint64_t log_k);
   void lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
                        std::vector<uint64_t> &ys);
   void numToBits(std::vector<uint64_t> &bits, uint64_t n, uint64_t number);

@@ -192,8 +192,8 @@ int Encodings::derive_sum(vec<PBPred *> &sum) {
   return c;
 }
 
-std::pair<int, int> Encodings::derive_unary_sum(vec<Lit> &left, vec<Lit> &right,
-                                                int rhs) {
+std::pair<int, int> Encodings::derive_unary_sum(vec<Lit> &left,
+                                                vec<Lit> &right) {
   vec<PBPred *> sum_leq;
   vec<PBPred *> sum_geq;
 

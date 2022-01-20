@@ -100,7 +100,7 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
       }
     }
     assert(left.size() == right.size());
-    std::pair<int, int> res = derive_unary_sum(left, right, k);
+    std::pair<int, int> res = derive_unary_sum(left, right);
     geq.push(res.first);
     leq.push(res.second);
   }

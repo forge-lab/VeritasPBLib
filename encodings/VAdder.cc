@@ -104,12 +104,12 @@ Lit VAdder::HA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b) {
 
 void VAdder::adderTree(MaxSATFormula *maxsat_formula,
                        std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
-                       int original_constr_id) {
+                       int pb_id, uint64_t log_k) {
   Lit x, y, z;
   Lit u = lit_Undef;
-  int current_constr_id = original_constr_id;
+  int current_constr_id = pb_id;
 
-  for (size_t i = 0; i < buckets.size(); i++) {
+  for (size_t i = 0; i < log_k && i < buckets.size(); i++) {
     if (buckets[i].size() == 0)
       continue;
 
@@ -312,23 +312,23 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
     rhs = s - rhs;
   }
 
-  int pb_constr_id = pb->_id;
+  int pb_id = pb->_id;
 
   // TODO: should we simplify the PB constraint?
 
-  encode(maxsat_formula, lits, coeffs, rhs, sign, pb_constr_id);
+  encode(maxsat_formula, lits, coeffs, rhs, sign, pb_id);
 }
 
 void VAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
                     vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign,
-                    int original_constr_id) {
+                    int pb_id) {
   _output.clear();
   mx = maxsat_formula;
 
   uint64_t nb = ld64(rhs); // number of bits
   Lit u = lit_Undef;
 
-  for (uint64_t iBit = 0; iBit < nb; ++iBit) {
+  for (uint64_t iBit = 0; iBit <= nb; ++iBit) {
     _buckets.push_back(std::queue<Lit>());
     _output.push(u);
     for (int iVar = 0; iVar < lits.size(); ++iVar) {
@@ -337,7 +337,14 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
     }
   }
 
-  adderTree(maxsat_formula, _buckets, _output, original_constr_id);
+  adderTree(maxsat_formula, _buckets, _output, pb_id, nb);
+
+  for (uint64_t i = nb; i < _buckets.size(); i++) {
+    while (_buckets[i].size() > 0) {
+      addUnitClause(maxsat_formula, ~_buckets[i].front());
+      _buckets[i].pop();
+    }
+  }
 
   std::vector<uint64_t> kBits;
   numToBits(kBits, _buckets.size(), rhs);
@@ -347,16 +354,4 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
 
 uint64_t VAdder::ld64(const uint64_t x) {
   return (sizeof(uint64_t) << 3) - __builtin_clzll(x);
-  //   cout << "x " << x << endl;
-  //   int ldretutn = 0;
-  //   for (int i = 0; i < 63; ++i)
-  //   {
-  //     if ((x & (1 << i)) > 0)
-  //     {
-  //       cout << "ldretutn " << ldretutn << endl;
-  //       ldretutn = i + 1;
-  //     }
-  //   }
-  //
-  //   return ldretutn;
 }

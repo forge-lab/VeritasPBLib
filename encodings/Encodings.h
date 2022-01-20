@@ -75,8 +75,7 @@ protected:
   std::pair<PBPred *, PBPred *> reify(Lit z, PB *pb);
   void derive_ordering(PBPred *p1, PBPred *p2);
   int derive_sum(vec<PBPred *> &sum);
-  std::pair<int, int> derive_unary_sum(vec<Lit> &left, vec<Lit> &right,
-                                       int rhs);
+  std::pair<int, int> derive_unary_sum(vec<Lit> &left, vec<Lit> &right);
 };
 } // namespace openwbo
 

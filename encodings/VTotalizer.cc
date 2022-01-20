@@ -103,7 +103,7 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
     lits_in.push(right[i]);
   }
   assert(lits_in.size() == lits_out.size());
-  std::pair<int, int> res_pair = derive_unary_sum(lits_in, lits_out, k);
+  std::pair<int, int> res_pair = derive_unary_sum(lits_in, lits_out);
   geq.push(res_pair.first);
   leq.push(res_pair.second);
 
