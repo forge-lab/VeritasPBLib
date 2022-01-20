@@ -3,8 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
- * PBLib,    Copyright (c) 2012-2013  Peter Steinke
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob
+ * Nordstrom PBLib,    Copyright (c) 2012-2013  Peter Steinke
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,9 +34,9 @@
 #include "Encodings.h"
 #include "core/SolverTypes.h"
 #include <map>
+#include <queue>
 #include <utility>
 #include <vector>
-#include <queue>
 
 namespace openwbo {
 class UAdder : public Encodings {
@@ -45,30 +45,33 @@ public:
   UAdder() {}
   ~UAdder() {}
 
-void encode(PB *pb, MaxSATFormula *maxsat_formula);
+  void encode(PB *pb, MaxSATFormula *maxsat_formula);
 
 protected:
-
   vec<Lit> _output;
   vec<Lit> clause;
-  std::vector<std::queue<Lit> > _buckets;
+  std::vector<std::queue<Lit>> _buckets;
 
   void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
 
   // Encode constraint.
-  void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits, vec<uint64_t> &coeffs, uint64_t rhs);
+  void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
+              vec<uint64_t> &coeffs, uint64_t rhs);
 
-  void FA_extra ( MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a, Lit b, Lit c );
-  Lit FA_carry ( MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c );
-  Lit FA_sum ( MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c );
-  Lit HA_carry ( MaxSATFormula *maxsat_formula, Lit a, Lit b);
-  Lit HA_sum ( MaxSATFormula *maxsat_formula, Lit a, Lit b );
-  void adderTree (MaxSATFormula *maxsat_formula, std::vector< std::queue< Lit > > & buckets, vec< Lit >& result );
-  void lessThanOrEqual (MaxSATFormula *maxsat_formula, vec< Lit > & xs, std::vector< uint64_t > & ys);
-  void numToBits ( std::vector<uint64_t> & bits, uint64_t n, uint64_t number );
+  void FA_extra(MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a, Lit b,
+                Lit c);
+  Lit FA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c);
+  Lit FA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c);
+  Lit HA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b);
+  Lit HA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b);
+  void adderTree(MaxSATFormula *maxsat_formula,
+                 std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
+                 uint64_t log_k);
+  void lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
+                       std::vector<uint64_t> &ys);
+  void numToBits(std::vector<uint64_t> &bits, uint64_t n, uint64_t number);
   uint64_t ld64(const uint64_t x);
-
 };
-}
+} // namespace openwbo
 
 #endif
