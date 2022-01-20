@@ -55,7 +55,7 @@ void VTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left,
 }
 
 void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
-                       int64_t rhs, vec<int> &geq, vec<int> &leq) {
+                       int64_t k, vec<int> &geq, vec<int> &leq) {
   vec<Lit> left;
   vec<Lit> right;
 
@@ -91,9 +91,9 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
   }
 
   if (left.size() > 1)
-    toCNF(maxsat_formula, left, rhs, geq, leq);
+    toCNF(maxsat_formula, left, k, geq, leq);
   if (right.size() > 1)
-    toCNF(maxsat_formula, right, rhs, geq, leq);
+    toCNF(maxsat_formula, right, k, geq, leq);
   adder(maxsat_formula, left, right, lits_out);
 
   // proof log unary sum
@@ -103,9 +103,10 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
     lits_in.push(right[i]);
   }
   assert(lits_in.size() == lits_out.size());
-  std::pair<int, int> res_pair = derive_unary_sum(lits_in, lits_out, rhs);
+  std::pair<int, int> res_pair = derive_unary_sum(lits_in, lits_out, k);
   geq.push(res_pair.first);
   leq.push(res_pair.second);
+  lits_out.shrink(lits_out.size() - k);
 }
 
 void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
@@ -123,9 +124,6 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   coeffs.growTo(lits.size(), 1);
 
   _rhs = card->_rhs;
-  uint64_t k = _rhs;
-  k++;
-  k *= 2;
 
   // transform it into <=
   if (sign == _PB_GREATER_OR_EQUAL_) {
@@ -146,6 +144,9 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
     return;
   }
 
+  uint64_t k = _rhs;
+  k++;
+
   for (int i = 0; i < lits.size(); i++) {
     Lit p = mkLit(maxsat_formula->nVars(), false);
     maxsat_formula->newVar();
@@ -156,11 +157,12 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   vec<int> geq;
   vec<int> leq;
-  toCNF(maxsat_formula, cardinality_outlits, _rhs, geq, leq);
+  toCNF(maxsat_formula, cardinality_outlits, k, geq, leq);
   assert(cardinality_inlits.size() == 0);
 
-  for (int i = _rhs; i < cardinality_outlits.size(); i++)
+  for (int i = _rhs; i < cardinality_outlits.size(); i++) {
     addUnitClause(maxsat_formula, ~cardinality_outlits[i]);
+  }
 
   // proof log fixing output
   PBPp *pbp = new PBPp(mx->getIncProofLogId());
