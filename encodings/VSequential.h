@@ -46,9 +46,6 @@ public:
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
-  std::pair<int, int> derive_unary_sum(vec<Lit> &left, vec<Lit> &right,
-                                       int rhs);
-  int derive_sum(vec<PBPred *> &sum);
 };
 } // namespace openwbo
 
