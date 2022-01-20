@@ -26,11 +26,11 @@
  *
  */
 
-#include "UTotalizer.h"
+#include "VTotalizer.h"
 
 using namespace openwbo;
 
-void UTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left,
+void VTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left,
                        vec<Lit> &right, vec<Lit> &output) {
   assert(output.size() == left.size() + right.size());
   // We only need to count the sums up to k.
@@ -54,15 +54,15 @@ void UTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left,
   }
 }
 
-void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
-                       int64_t k) {
+void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
+                       int64_t k, vec<int> &geq, vec<int> &leq) {
   vec<Lit> left;
   vec<Lit> right;
 
-  assert(lits.size() > 1);
-  int split = floor(lits.size() / 2);
+  assert(lits_out.size() > 1);
+  int split = floor(lits_out.size() / 2);
 
-  for (int i = 0; i < lits.size(); i++) {
+  for (int i = 0; i < lits_out.size(); i++) {
 
     if (i < split) {
       // left branch
@@ -78,7 +78,7 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
     } else {
 
       // right branch
-      if (lits.size() - split == 1) {
+      if (lits_out.size() - split == 1) {
         assert(cardinality_inlits.size() > 0);
         right.push(cardinality_inlits.last());
         cardinality_inlits.pop();
@@ -91,16 +91,27 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
   }
 
   if (left.size() > 1)
-    toCNF(maxsat_formula, left, k);
+    toCNF(maxsat_formula, left, k, geq, leq);
   if (right.size() > 1)
-    toCNF(maxsat_formula, right, k);
-  adder(maxsat_formula, left, right, lits);
+    toCNF(maxsat_formula, right, k, geq, leq);
+  adder(maxsat_formula, left, right, lits_out);
+
+  // proof log unary sum
+  vec<Lit> lits_in;
+  left.copyTo(lits_in);
+  for (int i = 0; i < right.size(); i++) {
+    lits_in.push(right[i]);
+  }
+  assert(lits_in.size() == lits_out.size());
+  std::pair<int, int> res_pair = derive_unary_sum(lits_in, lits_out, k);
+  geq.push(res_pair.first);
+  leq.push(res_pair.second);
 
   // k-simplification
-  lits.shrink(lits.size() - k);
+  lits_out.shrink(lits_out.size() - k);
 }
 
-void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
+void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
                         pb_Sign sign) {
   assert(sign != _PB_EQUAL_);
 
@@ -146,14 +157,26 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   lits.copyTo(cardinality_inlits);
 
-  toCNF(maxsat_formula, cardinality_outlits, k);
+  vec<int> geq;
+  vec<int> leq;
+  toCNF(maxsat_formula, cardinality_outlits, k, geq, leq);
   assert(cardinality_inlits.size() == 0);
 
-  for (int i = _rhs; i < cardinality_outlits.size(); i++)
+  for (int i = _rhs; i < cardinality_outlits.size(); i++) {
     addUnitClause(maxsat_formula, ~cardinality_outlits[i]);
+  }
+
+  // proof log fixing output
+  PBPp *pbp = new PBPp(mx->getIncProofLogId());
+  pbp->addition(card->_id, geq[0]);
+  for (int i = 1; i < geq.size(); i++) {
+    pbp->addition(geq[i]);
+  }
+  mx->addProofExpr(pbp);
 }
 
-void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula) {
+void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula) {
+  mx = maxsat_formula;
 
   switch (card->_sign) {
   case _PB_EQUAL_:

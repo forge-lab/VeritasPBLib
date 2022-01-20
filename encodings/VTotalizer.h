@@ -26,57 +26,35 @@
  *
  */
 
-#ifndef Encodings_h
-#define Encodings_h
+#ifndef VTotalizer_h
+#define VTotalizer_h
 
 #include "core/Solver.h"
 
-#include "../MaxSATFormula.h"
-#include "../MaxTypes.h"
+#include "Encodings.h"
 #include "core/SolverTypes.h"
-
-using NSPACE::Lit;
-using NSPACE::lit_Error;
-using NSPACE::lit_Undef;
-using NSPACE::mkLit;
-using NSPACE::Solver;
-using NSPACE::vec;
 
 namespace openwbo {
 
-//=================================================================================================
-class Encodings {
+class VTotalizer : public Encodings {
 
 public:
-  Encodings(pb_Cardinality cardinality_type = _CARD_SEQUENTIAL_,
-            pb_PB pb_type = _PB_ADDER_) {
-    _cardinality_type = cardinality_type;
-    _pb_type = pb_type;
-  }
-  ~Encodings() {}
+  VTotalizer() {}
+  ~VTotalizer() {}
 
-  // Auxiliary methods for creating clauses
-  //
-  void addUnitClause(MaxSATFormula *mx, Lit a);
-  void addBinaryClause(MaxSATFormula *mx, Lit a, Lit b);
-  void addTernaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c);
-  void addQuaternaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c, Lit d);
-  void addClause(MaxSATFormula *mx, vec<Lit> &c);
   void encode(Card *card, MaxSATFormula *maxsat_formula);
-  void encode(PB *pb, MaxSATFormula *maxsat_formula);
 
-protected:
-  vec<Lit> clause; // Temporary clause to be used while building the encodings.
-  pb_Cardinality _cardinality_type;
-  pb_PB _pb_type;
-
-  // Auxillary methods for proof logging
-  MaxSATFormula *mx;
-  std::pair<PBPred *, PBPred *> reify(Lit z, PB *pb);
-  void derive_ordering(PBPred *p1, PBPred *p2);
-  int derive_sum(vec<PBPred *> &sum);
-  std::pair<int, int> derive_unary_sum(vec<Lit> &left, vec<Lit> &right,
-                                       int rhs);
+private:
+  void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
+  void adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right,
+             vec<Lit> &output);
+  void toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits, int64_t k,
+             vec<int> &geq, vec<int> &leq);
+  int _rhs;
+  vec<Lit> cardinality_inlits; // Stores the inputs of the cardinality
+                               // constraint encoding for the totalizer encoding
+  vec<Lit> cardinality_outlits; // Stores the outputs of the cardinality
+                                // constraint encoding for incremental solving
 };
 } // namespace openwbo
 
