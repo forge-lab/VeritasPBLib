@@ -244,6 +244,40 @@ int main(int argc, char **argv) {
        std::cout << "c | Card - ratio: " << (float)ratio/maxsat_formula->nCard() << std::endl;
     }
 
+    if (maxsat_formula->nPB() > 0){
+
+        int min = -1;
+        int max = -1;
+        int avg = 0;
+        int64_t max_coeff = -1;
+        int64_t min_coeff = -1;
+        float avg_coeff = 0;
+        
+         for(int i = 0; i < maxsat_formula->nPB(); i++){
+            PB * c = maxsat_formula->getPBConstraint(i);
+            if (c->_lits.size() < min || min == -1) min = c->_lits.size();
+            if (c->_lits.size() > max) max = c->_lits.size();
+            avg += c->_lits.size();
+            int64_t c_avg_coeff = 0;
+            for (int j = 0; j < c->_coeffs.size(); j++){
+              if (c->_coeffs[j] < min_coeff || min_coeff == -1) min_coeff = c->_coeffs[j];
+              if (c->_coeffs[j] > max_coeff) max_coeff = c->_coeffs[j];  
+              c_avg_coeff += c->_coeffs[j];
+            }
+            avg_coeff += ((float)c_avg_coeff/c->_lits.size());
+          }
+
+       std::cout << "c === PB stats ===" << std::endl;
+       std::cout << "c | PB - min size: " << min << std::endl;
+       std::cout << "c | PB - max size: " << max << std::endl;
+       std::cout << "c | PB - avg size: " << (avg/maxsat_formula->nPB()) << std::endl;
+       std::cout << "c | PB - min coeff size: " << min_coeff << std::endl;
+       std::cout << "c | PB - max coeff size: " << max_coeff << std::endl;
+       std::cout << "c | PB - avg coeff size: " << (avg_coeff/maxsat_formula->nPB()) << std::endl;
+              
+
+    }
+
   }
 
    return 0;
