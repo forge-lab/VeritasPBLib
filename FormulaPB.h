@@ -36,10 +36,14 @@
 
 #include "MaxTypes.h"
 
+#include <map>
+
 using NSPACE::Lit;
 using NSPACE::vec;
 
 namespace openwbo {
+
+typedef std::map<int, int> varMap;
 
 // Cardinality constraint of the form atMostK
 class Card {
@@ -187,13 +191,17 @@ public:
     return true;
   }
 
-  std::string print() {
+  std::string print(varMap v) {
     std::stringstream ss;
     for (int i = 0; i < _coeffs.size(); i++) {
       ss << _coeffs[i] << " ";
       if (sign(_lits[i]))
         ss << "~";
-      ss << "x" << var(_lits[i]) + 1 << " ";
+      varMap::const_iterator iter = v.find(var(_lits[i]));
+      if (iter != v.end())
+        ss << "x" << iter->second << " ";
+      else
+        ss << "x" << (var(_lits[i]) + 1) << " ";
     }
     if (_sign == _PB_EQUAL_)
       ss << "= ";

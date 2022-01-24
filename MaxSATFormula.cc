@@ -265,7 +265,7 @@ void MaxSATFormula::printPBPtoFile(std::string filename) {
 
   for (int i = 0; i < nProofExpr(); i++) {
     PBP *pbp = getProofExpr(i);
-    file << pbp->print() << "\n";
+    file << pbp->print(getVarMap()) << "\n";
   }
 
   file << "# 0"
