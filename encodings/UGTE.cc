@@ -106,14 +106,8 @@ bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
 
     for (wlit_mapt::iterator left_it = loutputs.begin();
          left_it != loutputs.end(); left_it++) {
-
-      if (left_it->first > k) {
-        addBinaryClause(maxsat_formula, ~left_it->second,
-                        get_var(maxsat_formula, oliterals, k));
-      } else {
-        addBinaryClause(maxsat_formula, ~left_it->second,
-                        get_var(maxsat_formula, oliterals, left_it->first));
-      }
+      addBinaryClause(maxsat_formula, ~left_it->second,
+                      get_var(maxsat_formula, oliterals, left_it->first));
     }
   }
 
@@ -122,14 +116,8 @@ bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
 
     for (wlit_mapt::iterator right_it = routputs.begin();
          right_it != routputs.end(); right_it++) {
-
-      if (right_it->first > k) {
-        addBinaryClause(maxsat_formula, ~right_it->second,
-                        get_var(maxsat_formula, oliterals, k));
-      } else {
-        addBinaryClause(maxsat_formula, ~right_it->second,
-                        get_var(maxsat_formula, oliterals, right_it->first));
-      }
+      addBinaryClause(maxsat_formula, ~right_it->second,
+                      get_var(maxsat_formula, oliterals, right_it->first));
     }
   }
 
@@ -139,14 +127,26 @@ bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
     for (wlit_mapt::iterator rit = routputs.begin(); rit != routputs.end();
          rit++) {
       uint64_t tw = lit->first + rit->first;
-      if (tw > k) {
-        addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
-                         get_var(maxsat_formula, oliterals, k));
-      } else {
-        addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
-                         get_var(maxsat_formula, oliterals, tw));
-      }
+      addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
+                       get_var(maxsat_formula, oliterals, tw));
     }
+  }
+
+  // k-simplification
+  uint64_t max_lit_weight = UINT64_MAX;
+  vec<uint64_t> weights_to_remove;
+  for (wlit_mapt::iterator lit = oliterals.begin(); lit != oliterals.end();
+       lit++) {
+    if (lit->first >= k && lit->first < max_lit_weight) {
+      weights_to_remove.push(max_lit_weight);
+      max_lit_weight = lit->first;
+    }
+    if (lit->first > max_lit_weight) {
+      weights_to_remove.push(lit->first);
+    }
+  }
+  for (int i = 0; i < weights_to_remove.size(); i++) {
+    oliterals.erase(weights_to_remove[i]);
   }
 
   return true;
