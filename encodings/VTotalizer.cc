@@ -63,7 +63,6 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
   int split = floor(lits_out.size() / 2);
 
   for (int i = 0; i < lits_out.size(); i++) {
-
     if (i < split) {
       // left branch
       if (split == 1) {
@@ -76,7 +75,6 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
         left.push(p);
       }
     } else {
-
       // right branch
       if (lits_out.size() - split == 1) {
         assert(cardinality_inlits.size() > 0);
@@ -94,6 +92,7 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
     toCNF(maxsat_formula, left, k, geq, leq);
   if (right.size() > 1)
     toCNF(maxsat_formula, right, k, geq, leq);
+  lits_out.shrink(lits_out.size() - (left.size() + right.size()));
   adder(maxsat_formula, left, right, lits_out);
 
   // proof log unary sum
@@ -118,6 +117,8 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   vec<Lit> lits;
   vec<Lit> pb_outlits;
   vec<int64_t> coeffs;
+  cardinality_outlits.clear();
+  cardinality_inlits.clear();
 
   card->_lits.copyTo(lits);
 

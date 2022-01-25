@@ -63,7 +63,6 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
   int split = floor(lits.size() / 2);
 
   for (int i = 0; i < lits.size(); i++) {
-
     if (i < split) {
       // left branch
       if (split == 1) {
@@ -76,7 +75,6 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
         left.push(p);
       }
     } else {
-
       // right branch
       if (lits.size() - split == 1) {
         assert(cardinality_inlits.size() > 0);
@@ -94,6 +92,7 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
     toCNF(maxsat_formula, left, k);
   if (right.size() > 1)
     toCNF(maxsat_formula, right, k);
+  lits.shrink(lits.size() - (left.size() + right.size()));
   adder(maxsat_formula, left, right, lits);
 
   // k-simplification
@@ -107,6 +106,8 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   vec<Lit> lits;
   vec<Lit> pb_outlits;
   vec<int64_t> coeffs;
+  cardinality_outlits.clear();
+  cardinality_inlits.clear();
 
   card->_lits.copyTo(lits);
 
