@@ -153,10 +153,8 @@ public:
         return false;
     } else if (_sign == _PB_LESS_OR_EQUAL_) {
       // TODO: support <= for clause detection
-      printf("c Error: PB constraint should be normalized to only include = "
+      printf("c Warning: PB constraint should be normalized to only include = "
              "and >=.\n");
-      printf("s UNKNOWN\n");
-      exit(_ERROR_);
     }
 
     // Assume _sign == false...

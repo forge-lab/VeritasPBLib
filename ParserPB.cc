@@ -4,8 +4,9 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran McCreesh, Jakob Nordstrom
- * Open-WBO, Copyright (c) 2013-2021, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran
+ * McCreesh, Jakob Nordstrom Open-WBO, Copyright (c) 2013-2021, Ruben Martins,
+ * Vasco Manquinho, Ines Lynce
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -248,12 +249,12 @@ int ParserPB::parseConstraint() {
   // Read constraint sign
   pb_Sign ctrSign = _PB_GREATER_OR_EQUAL_;
   p->_sign = _PB_GREATER_OR_EQUAL_;
-  if (c == '='){
+  if (c == '=') {
     ctrSign = _PB_EQUAL_;
-    p->_sign = _PB_EQUAL_;
+    p->_sign = _PB_GREATER_OR_EQUAL_;
   } else if (c == '<') {
     ctrSign = _PB_LESS_OR_EQUAL_;
-    //p->_sign = true;
+    // p->_sign = true;
     p->_sign = _PB_LESS_OR_EQUAL_;
   }
 
@@ -280,14 +281,12 @@ int ParserPB::parseConstraint() {
   readUntilEndOfLine();
   maxsat_formula->addPBConstraint(p);
 
-  // if (ctrSign == _PB_EQUAL_) {
-  //   PB *p2 = new PB(p->_lits, p->_coeffs, p->_rhs, true);
-  //   assert(p->_sign == false);
-  //   maxsat_formula->addPBConstraint(p);
-  //   maxsat_formula->addPBConstraint(p2);
-  //   delete p2;
-  // } else
-  //   maxsat_formula->addPBConstraint(p);
+  if (ctrSign == _PB_EQUAL_) {
+    PB *p2 = new PB(p->_lits, p->_coeffs, p->_rhs, _PB_LESS_OR_EQUAL_);
+    assert(p->_sign == _PB_GREATER_OR_EQUAL_);
+    maxsat_formula->addPBConstraint(p2);
+    delete p2;
+  }
 
   delete p;
 
