@@ -3,8 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob
- * Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Andy Oertel, Stephan Gocht, 
+ *                                   Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,7 @@ public:
   PBP() { _ctrid = -1; }
   ~PBP() {}
 
-  virtual std::string print(varMap v) = 0;
+  virtual std::string print(varMap& v) = 0;
   int _ctrid;
 };
 
@@ -65,7 +65,7 @@ public:
   PBPred() {}
   ~PBPred() {}
 
-  std::string print(varMap v) {
+  std::string print(varMap& v) {
     std::string wit =
         " x" + std::to_string(_v) + " -> " + std::to_string(_value);
     std::string s = "red " + _ctr->print(v) + wit;
@@ -86,7 +86,7 @@ public:
     _ctr = ctr;
   }
 
-  std::string print(varMap v) {
+  std::string print(varMap& v) {
     std::string s = "e " + std::to_string(_id) + " " + _ctr->print(v);
     return s;
   }
@@ -130,7 +130,7 @@ public:
 
   // TODO: should we support literal axioms, weakening?
 
-  std::string print(varMap v) { return _p.str(); }
+  std::string print(varMap& v) { return _p.str(); }
 
 private:
   std::stringstream _p;
@@ -145,7 +145,7 @@ public:
     _ctrid = ctrid;
   }
 
-  std::string print(varMap v) {
+  std::string print(varMap& v) {
     std::stringstream ss;
     ss << "u ";
     int rhs = 1;

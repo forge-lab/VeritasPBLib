@@ -5,7 +5,8 @@
  *
  * MiniSat,   Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
  *            Copyright (c) 2007-2010, Niklas Sorensson
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob Nordstrom
+ * VeritasPBLib, Copyright (c) 2021, Andy Oertel, Stephan Gocht, 
+ *                                   Ruben Martins, Jakob Nordstrom
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -73,7 +74,7 @@ static void SIGINT_exit(int signum) {
 int main(int argc, char **argv) {
   printf("c\nc VeritasPBLib:\t Verified PB encodings\n");
   printf("c Version:\t 2021\n");
-  printf("c Authors:\t Ruben Martins, Stephan Gocht, Jakob Nordstrom\n");
+  printf("c Authors:\t Andy Oertel, Stephan Gocht, Ruben Martins, Jakob Nordstrom\n");
   printf("c Contact:\t rubenm@andrew.cmu.edu\nc\n");
   NSPACE::setUsageHelp("c USAGE: %s [options] <input-file>\n\n");
 

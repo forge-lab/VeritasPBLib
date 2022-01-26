@@ -1,9 +1,11 @@
 /*!
- * \author Ruben Martins - ruben@sat.inesc-id.pt
+ * \author Ruben Martins - rubenm@andrew.cmu.edu
  *
  * @section LICENSE
  *
- * Open-WBO, Copyright (c) 2013-2015, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * Open-WBO, Copyright (c) 2013-2021, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021, Andy Oertel, Stephan Gocht, 
+ *                                   Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -89,7 +91,7 @@ public:
   Hard() {}
   ~Hard() { clause.clear(); }
 
-  std::string printPBPu(varMap v) {
+  std::string printPBPu(varMap& v) {
     std::stringstream ss;
     assert(clause.size() > 0);
     int rhs = 1;
@@ -110,7 +112,7 @@ public:
     return ss.str();
   }
 
-  std::string print(varMap v) {
+  std::string print(varMap& v) {
     std::stringstream ss;
     assert(clause.size() > 0);
     for (int i = 0; i < clause.size(); i++) {
