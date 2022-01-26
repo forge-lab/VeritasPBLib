@@ -244,38 +244,37 @@ void MaxSATFormula::convertPBtoMaxSAT() {
 void MaxSATFormula::printCNFtoFile(std::string filename) {
 
   std::ofstream file;
+  std::stringstream ss;
   file.open(filename + ".cnf");
-  file << "p cnf " << nVars() << " " << nHard() << "\n";
+  ss << "p cnf " << nVars() << " " << nHard() << "\n";
 
   for (int i = 0; i < nHard(); i++) {
     Hard &hard = getHardClause(i);
-    file << hard.print(getVarMap()) << "\n";
+    hard.print(ss, getVarMap());
   }
+  file << ss.rdbuf();
+  file.close();
 }
 
 void MaxSATFormula::printPBPtoFile(std::string filename) {
   std::ofstream file;
+  std::stringstream ss;
   file.open(filename + ".pbp");
-  file << "pseudo-Boolean proof version 1.2"
-       << "\n";
-  file << "f"
-       << "\n";
-  file << "# 1"
-       << "\n";
-
+  ss << "pseudo-Boolean proof version 1.2\nf\n# 1\n";
+  
   for (int i = 0; i < nProofExpr(); i++) {
     PBP *pbp = getProofExpr(i);
-    file << pbp->print(getVarMap()) << "\n";
+    pbp->print(ss, getVarMap());
   }
 
-  file << "# 0"
-       << "\n";
-
+  ss << "# 0\n";
+  
   for (int i = 0; i < nHard(); i++) {
     Hard &hard = getHardClause(i);
-    file << hard.printPBPu(getVarMap()) << "\n";
+    hard.printPBPu(ss, getVarMap());
   }
 
-  file << "w 1"
-       << "\n";
+  ss << " w 1\n";
+  file << ss.rdbuf();
+  file.close();
 }

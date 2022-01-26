@@ -50,6 +50,7 @@ public:
   ~PBP() {}
 
   virtual std::string print(varMap& v) = 0;
+  virtual void print(std::stringstream &ss, varMap& v) = 0;
   int _ctrid;
 };
 
@@ -64,6 +65,12 @@ public:
   }
   PBPred() {}
   ~PBPred() {}
+
+  void print(std::stringstream &ss, varMap& v) {
+    ss << "red ";
+    _ctr->print(ss, v);
+    ss << " x" << _v << " -> " << _value << "\n";
+  }
 
   std::string print(varMap& v) {
     std::string wit =
@@ -84,6 +91,12 @@ public:
     _ctrid = ctrid;
     _id = id;
     _ctr = ctr;
+  }
+
+  void print(std::stringstream &ss, varMap& v){
+    ss << "e " << _id << " ";
+    _ctr->print(ss, v);
+    ss << "\n";
   }
 
   std::string print(varMap& v) {
@@ -130,6 +143,10 @@ public:
 
   // TODO: should we support literal axioms, weakening?
 
+  void print(std::stringstream &ss, varMap& v){
+    ss << _p.str() << "\n";
+  }
+
   std::string print(varMap& v) { return _p.str(); }
 
 private:
@@ -143,6 +160,24 @@ public:
   PBPu(int ctrid, vec<Lit> &clause) {
     clause.copyTo(_clause);
     _ctrid = ctrid;
+  }
+
+  void print(std::stringstream &ss, varMap& v){
+    ss << "u ";
+    int rhs = 1;
+    for (int i = 0; i < _clause.size(); i++) {
+      if (sign(_clause[i])) {
+        ss << "1 ~";
+        // rhs--;
+      } else
+        ss << "1 ";
+      varMap::const_iterator iter = v.find(var(_clause[i]));
+      if (iter != v.end())
+        ss << "x" << iter->second << " ";
+      else
+        ss << "x" << (var(_clause[i]) + 1) << " ";
+    }
+    ss << ">= " << rhs << " ;\n";
   }
 
   std::string print(varMap& v) {

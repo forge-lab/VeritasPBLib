@@ -189,7 +189,27 @@ public:
     return true;
   }
 
-  std::string print(varMap v) {
+  void print(std::stringstream &ss, varMap &v){
+    for (int i = 0; i < _coeffs.size(); i++) {
+      ss << _coeffs[i] << " ";
+      if (sign(_lits[i]))
+        ss << "~";
+      varMap::const_iterator iter = v.find(var(_lits[i]));
+      if (iter != v.end())
+        ss << "x" << iter->second << " ";
+      else
+        ss << "x" << (var(_lits[i]) + 1) << " ";
+    }
+    if (_sign == _PB_EQUAL_)
+      ss << "= ";
+    else if (_sign == _PB_LESS_OR_EQUAL_)
+      ss << "<= ";
+    else if (_sign == _PB_GREATER_OR_EQUAL_)
+      ss << ">= ";
+    ss << _rhs << " ;";
+  }
+
+  std::string print(varMap &v) {
     std::stringstream ss;
     for (int i = 0; i < _coeffs.size(); i++) {
       ss << _coeffs[i] << " ";

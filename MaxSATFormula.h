@@ -91,6 +91,25 @@ public:
   Hard() {}
   ~Hard() { clause.clear(); }
 
+  void printPBPu(std::stringstream &ss, varMap& v){
+     assert(clause.size() > 0);
+    int rhs = 1;
+    ss << "u ";
+    for (int i = 0; i < clause.size(); i++) {
+      if (sign(clause[i])) {
+        ss << "1 ~x";
+        // rhs--;
+      } else
+        ss << "1 x";
+      varMap::const_iterator iter = v.find(var(clause[i]));
+      if (iter != v.end())
+        ss << iter->second << " ";
+      else
+        ss << (var(clause[i]) + 1) << " ";
+    }
+    ss << ">= " << rhs << " ;\n";
+  }
+
   std::string printPBPu(varMap& v) {
     std::stringstream ss;
     assert(clause.size() > 0);
@@ -108,8 +127,22 @@ public:
       else
         ss << (var(clause[i]) + 1) << " ";
     }
-    ss << ">= " << rhs << " ;";
+    ss << ">= " << rhs << " ;\n";
     return ss.str();
+  }
+
+  void print(std::stringstream &ss, varMap& v){
+    assert(clause.size() > 0);
+    for (int i = 0; i < clause.size(); i++) {
+      if (sign(clause[i]))
+        ss << "-";
+      varMap::const_iterator iter = v.find(var(clause[i]));
+      if (iter != v.end())
+        ss << iter->second << " ";
+      else
+        ss << (var(clause[i]) + 1) << " ";
+    }
+    ss << "0\n";
   }
 
   std::string print(varMap& v) {
