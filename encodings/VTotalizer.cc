@@ -119,8 +119,8 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   vec<int64_t> coeffs;
   cardinality_outlits.clear();
   cardinality_inlits.clear();
-
   card->_lits.copyTo(lits);
+  int n = lits.size();
 
   // code adapted from Open-WBO
   // would also support PB constraints using the sequential encoding
@@ -144,6 +144,10 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
     for (int i = 0; i < lits.size(); i++) {
       addUnitClause(maxsat_formula, ~lits[i]);
     }
+    return;
+  }
+  // constraint is no restriction
+  if (_rhs == n) {
     return;
   }
 
