@@ -128,26 +128,42 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   _rhs = card->_rhs;
 
-  // transform it into <=
-  if (sign == _PB_GREATER_OR_EQUAL_) {
+  pb_Sign current_sign = sign;
+
+  // transform the constraint to consider the smallest rhs
+  if (n - _rhs < _rhs) {
     int s = 0;
-    for (int i = 0; i < coeffs.size(); i++) {
-      s += coeffs[i];
+    for (int i = 0; i < lits.size(); i++) {
+      s += 1;
       lits[i] = ~(lits[i]);
     }
     _rhs = s - _rhs;
+    if (current_sign == _PB_GREATER_OR_EQUAL_)
+      current_sign = _PB_LESS_OR_EQUAL_;
+    else
+      current_sign = _PB_GREATER_OR_EQUAL_;
   }
 
   // simplifications
   // all literals must be assigned to 0
-  if (_rhs == 0) {
+  if (_rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
     for (int i = 0; i < lits.size(); i++) {
       addUnitClause(maxsat_formula, ~lits[i]);
     }
     return;
   }
+  // all literals must be assigned to 1
+  if (_rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, lits[i]);
+    }
+    return;
+  }
   // constraint is no restriction
-  if (_rhs == n) {
+  if (_rhs == n && current_sign == _PB_LESS_OR_EQUAL_) {
+    return;
+  }
+  if (_rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
     return;
   }
 
@@ -167,17 +183,29 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   toCNF(maxsat_formula, cardinality_outlits, k, geq, leq);
   assert(cardinality_inlits.size() == 0);
 
-  for (int i = _rhs; i < cardinality_outlits.size(); i++) {
-    addUnitClause(maxsat_formula, ~cardinality_outlits[i]);
+  if (current_sign == _PB_GREATER_OR_EQUAL_) {
+    addUnitClause(maxsat_formula, cardinality_outlits[_rhs - 1]);
+  } else {
+    addUnitClause(maxsat_formula, ~cardinality_outlits[_rhs]);
   }
 
   // proof log fixing output
-  PBPp *pbp = new PBPp(mx->getIncProofLogId());
-  pbp->addition(card->_id, geq[0]);
-  for (int i = 1; i < geq.size(); i++) {
-    pbp->addition(geq[i]);
+  if (current_sign == _PB_GREATER_OR_EQUAL_) {
+
+    PBPp *pbp = new PBPp(mx->getIncProofLogId());
+    pbp->addition(card->_id, leq[0]);
+    for (int i = 1; i < leq.size(); i++) {
+      pbp->addition(leq[i]);
+    }
+    mx->addProofExpr(pbp);
+  } else {
+    PBPp *pbp = new PBPp(mx->getIncProofLogId());
+    pbp->addition(card->_id, geq[0]);
+    for (int i = 1; i < geq.size(); i++) {
+      pbp->addition(geq[i]);
+    }
+    mx->addProofExpr(pbp);
   }
-  mx->addProofExpr(pbp);
 }
 
 void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula) {
