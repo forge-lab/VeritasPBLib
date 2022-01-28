@@ -175,8 +175,15 @@ void MaxSATFormula::addPBConstraint(PB *p) {
       else
         assert(false);
       addHardClause(unit);
-    } else
+    } else if (p->_sign == _PB_GREATER_OR_EQUAL_) {
       addHardClause(p->_lits);
+    } else {
+      vec<Lit> neg_lits;
+      for (int i = 0; i < p->_lits.size(); i++) {
+        neg_lits.push(~p->_lits[i]);
+      }
+      addHardClause(neg_lits);
+    }
   } else if (p->isCardinality()) {
     cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
   } else {
@@ -261,14 +268,14 @@ void MaxSATFormula::printPBPtoFile(std::string filename) {
   std::stringstream ss;
   file.open(filename + ".pbp");
   ss << "pseudo-Boolean proof version 1.2\nf\n# 1\n";
-  
+
   for (int i = 0; i < nProofExpr(); i++) {
     PBP *pbp = getProofExpr(i);
     pbp->print(ss, getVarMap());
   }
 
   ss << "# 0\n";
-  
+
   for (int i = 0; i < nHard(); i++) {
     Hard &hard = getHardClause(i);
     hard.printPBPu(ss, getVarMap());

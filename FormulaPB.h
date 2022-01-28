@@ -152,9 +152,16 @@ public:
       if (rhs != _rhs)
         return false;
     } else if (_sign == _PB_LESS_OR_EQUAL_) {
-      // TODO: support <= for clause detection
-      printf("c Warning: PB constraint should be normalized to only include = "
-             "and >=.\n");
+      int rhs = -1;
+      for (int i = 0; i < _coeffs.size(); i++) {
+        if (_coeffs[i] != 1 && _coeffs[i] != -1)
+          return false;
+        if (_coeffs[i] == 1)
+          rhs++;
+      }
+      if (rhs != _rhs) {
+        return false;
+      }
     }
 
     // Assume _sign == false...
@@ -189,7 +196,7 @@ public:
     return true;
   }
 
-  void print(std::stringstream &ss, varMap &v){
+  void print(std::stringstream &ss, varMap &v) {
     for (int i = 0; i < _coeffs.size(); i++) {
       ss << _coeffs[i] << " ";
       if (sign(_lits[i]))
