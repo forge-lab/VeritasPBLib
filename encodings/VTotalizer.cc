@@ -121,28 +121,12 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   cardinality_inlits.clear();
   card->_lits.copyTo(lits);
   int n = lits.size();
+  _rhs = card->_rhs;
 
   // code adapted from Open-WBO
   // would also support PB constraints using the sequential encoding
   coeffs.growTo(lits.size(), 1);
-
-  _rhs = card->_rhs;
-
   pb_Sign current_sign = sign;
-
-  // transform the constraint to consider the smallest rhs
-  if (n - _rhs < _rhs) {
-    int s = 0;
-    for (int i = 0; i < lits.size(); i++) {
-      s += 1;
-      lits[i] = ~(lits[i]);
-    }
-    _rhs = s - _rhs;
-    if (current_sign == _PB_GREATER_OR_EQUAL_)
-      current_sign = _PB_LESS_OR_EQUAL_;
-    else
-      current_sign = _PB_GREATER_OR_EQUAL_;
-  }
 
   // simplifications
   // all literals must be assigned to 0
@@ -165,6 +149,20 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   }
   if (_rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
     return;
+  }
+
+  // transform the constraint to consider the smallest rhs
+  if (n - _rhs < _rhs) {
+    int s = 0;
+    for (int i = 0; i < lits.size(); i++) {
+      s += 1;
+      lits[i] = ~(lits[i]);
+    }
+    _rhs = s - _rhs;
+    if (current_sign == _PB_GREATER_OR_EQUAL_)
+      current_sign = _PB_LESS_OR_EQUAL_;
+    else
+      current_sign = _PB_GREATER_OR_EQUAL_;
   }
 
   uint64_t k = _rhs;

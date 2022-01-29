@@ -110,34 +110,48 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   cardinality_inlits.clear();
   card->_lits.copyTo(lits);
   int n = lits.size();
+  _rhs = card->_rhs;
 
   // code adapted from Open-WBO
   // would also support PB constraints using the sequential encoding
   coeffs.growTo(lits.size(), 1);
-
-  _rhs = card->_rhs;
-
-  // transform it into <=
-  if (sign == _PB_GREATER_OR_EQUAL_) {
-    int s = 0;
-    for (int i = 0; i < coeffs.size(); i++) {
-      s += coeffs[i];
-      lits[i] = ~(lits[i]);
-    }
-    _rhs = s - _rhs;
-  }
+  pb_Sign current_sign = sign;
 
   // simplifications
   // all literals must be assigned to 0
-  if (_rhs == 0) {
+  if (_rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
     for (int i = 0; i < lits.size(); i++) {
       addUnitClause(maxsat_formula, ~lits[i]);
     }
     return;
   }
-  // constraint is no restriction
-  if (_rhs == n) {
+  // all literals must be assigned to 1
+  if (_rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, lits[i]);
+    }
     return;
+  }
+  // constraint is no restriction
+  if (_rhs == n && current_sign == _PB_LESS_OR_EQUAL_) {
+    return;
+  }
+  if (_rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
+    return;
+  }
+
+  // transform the constraint to consider the smallest rhs
+  if (n - _rhs < _rhs) {
+    int s = 0;
+    for (int i = 0; i < lits.size(); i++) {
+      s += 1;
+      lits[i] = ~(lits[i]);
+    }
+    _rhs = s - _rhs;
+    if (current_sign == _PB_GREATER_OR_EQUAL_)
+      current_sign = _PB_LESS_OR_EQUAL_;
+    else
+      current_sign = _PB_GREATER_OR_EQUAL_;
   }
 
   uint64_t k = _rhs;
@@ -154,8 +168,11 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   toCNF(maxsat_formula, cardinality_outlits, k);
   assert(cardinality_inlits.size() == 0);
 
-  for (int i = _rhs; i < cardinality_outlits.size(); i++)
-    addUnitClause(maxsat_formula, ~cardinality_outlits[i]);
+  if (current_sign == _PB_GREATER_OR_EQUAL_) {
+    addUnitClause(maxsat_formula, cardinality_outlits[_rhs - 1]);
+  } else {
+    addUnitClause(maxsat_formula, ~cardinality_outlits[_rhs]);
+  }
 }
 
 void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula) {

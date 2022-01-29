@@ -29,103 +29,133 @@
 
 using namespace openwbo;
 
-void USequential::encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign){
-  assert (sign != _PB_EQUAL_);
+void USequential::encode(Card *card, MaxSATFormula *maxsat_formula,
+                         pb_Sign sign) {
+  assert(sign != _PB_EQUAL_);
 
   vec<Lit> lits;
-  vec<Lit> pb_outlits;
-  vec<uint64_t> coeffs;
-  
-  card->_lits.copyTo(lits);
-
-  // code adapted from Open-WBO
-  // would also support PB constraints using the sequential encoding
-  coeffs.growTo(lits.size(), 1);
-
   uint64_t rhs = card->_rhs;
+  card->_lits.copyTo(lits);
   int n = lits.size();
 
-  // transform it into <=
-  if (sign == _PB_GREATER_OR_EQUAL_){
-    int s = 0;
-      for (int i = 0; i < coeffs.size(); i++) {
-        s += coeffs[i];
-        lits[i] = ~(lits[i]);
-      }
-      rhs = s - rhs;
-  }
+  // >= we need to fix output @rhs with positive literal
+  // <= we need to fix output @(rhs+1) with negative literal
+
+  pb_Sign current_sign = sign;
 
   // simplifications
   // all literals must be assigned to 0
-  if (rhs == 0){
-    for (int i = 0; i < lits.size(); i++){
+  if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
       addUnitClause(maxsat_formula, ~lits[i]);
     }
     return;
   }
+  // all literals must be assigned to 1
+  if (rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, lits[i]);
+    }
+    return;
+  }
+  // constraint is no restriction
+  if (rhs == n && current_sign == _PB_LESS_OR_EQUAL_) {
+    return;
+  }
+  if (rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
+    return;
+  }
 
+  // transform the constraint to consider the smallest rhs
+  if (n - rhs < rhs) {
+    int s = 0;
+    for (int i = 0; i < lits.size(); i++) {
+      s += 1;
+      lits[i] = ~(lits[i]);
+    }
+    rhs = s - rhs;
+    if (current_sign == _PB_GREATER_OR_EQUAL_)
+      current_sign = _PB_LESS_OR_EQUAL_;
+    else
+      current_sign = _PB_GREATER_OR_EQUAL_;
+  }
 
-  // <= encoding needs to count rhs+1
-  rhs = rhs +1;
+  uint64_t k = rhs;
+  k++; // for proof logging we always treat it as a _PB_LESS_OR_EQUAL_ ctr
+
+  // TODO: creating some variables that may not be used in the encoding
+  // Example: if >= we are creating k+1 for the pbp format ;
+  // TODO: only create these variables for the pbp format
 
   // Create auxiliary variables.
-  vec<Lit> *seq_auxiliary = new vec<Lit>[n + 1];
-  for (int i = 0; i < n + 1; i++)
-    seq_auxiliary[i].growTo(rhs + 1);
-
-  for (int i = 1; i <= n; ++i) {
-    for (int j = 1; j <= (int)rhs; ++j) {
+  vec<Lit> *seq_auxiliary = new vec<Lit>[n];
+  for (int i = 0; i < n; i++) {
+    if (i + 1 < k)
+      seq_auxiliary[i].growTo(i + 1);
+    else
+      seq_auxiliary[i].growTo(k);
+    for (int j = 0; j < seq_auxiliary[i].size(); j++) {
       seq_auxiliary[i][j] = mkLit(maxsat_formula->nVars(), false);
       maxsat_formula->newVar();
     }
   }
 
-  for (int i = 1; i <= n; i++) {
-    // WARNING: wi is used as int for array indexes but as int64_t
-    // for the coeffs. Dangerous if the coeffs are larger than INT32_MAX.
-    // Same problem occurs with rhs.
-    uint64_t wi = coeffs[i - 1];
-    // assert(wi <= rhs);
+  if (current_sign == _PB_GREATER_OR_EQUAL_)
+    k--;
 
-    for (int j = 1; j <= (int)rhs; j++) {
-      if (i >= 2 && i <= n && j <= (int)rhs) {
-        addBinaryClause(maxsat_formula, ~seq_auxiliary[i - 1][j], seq_auxiliary[i][j]);
-      }
-      if (i <= n && j <= (int)wi) {
-        addBinaryClause(maxsat_formula, ~lits[i - 1], seq_auxiliary[i][j]);
-      }
-      if (i >= 2 && i <= n && j <= (int)(rhs - wi)) {
-        addTernaryClause(maxsat_formula, ~seq_auxiliary[i - 1][j], ~lits[i - 1],
-                         seq_auxiliary[i][j + (int)wi]);
-      }
+  addBinaryClause(maxsat_formula, ~lits[0], seq_auxiliary[0][0]);
+  addBinaryClause(maxsat_formula, lits[0], ~seq_auxiliary[0][0]);
+
+  for (int i = 1; i < n; i++) {
+    addBinaryClause(maxsat_formula, ~lits[i], seq_auxiliary[i][0]);
+
+    if (i + 1 == seq_auxiliary[i].size()) {
+      addBinaryClause(maxsat_formula, lits[i], ~seq_auxiliary[i][i]);
+      addBinaryClause(maxsat_formula, seq_auxiliary[i - 1][i - 1],
+                      ~seq_auxiliary[i][i]);
     }
 
-    if (i >= 2) {
-      addBinaryClause(maxsat_formula, ~seq_auxiliary[i - 1][(int)rhs + 1 - (int)wi],
-                      ~lits[i - 1]);
+    for (int j = 0; j < k; j++) {
+      if (j < seq_auxiliary[i - 1].size())
+        addTernaryClause(maxsat_formula, lits[i], seq_auxiliary[i - 1][j],
+                         ~seq_auxiliary[i][j]);
+
+      if (j < seq_auxiliary[i - 1].size())
+        addBinaryClause(maxsat_formula, ~seq_auxiliary[i - 1][j],
+                        seq_auxiliary[i][j]);
+
+      if (j + 1 < k && j < seq_auxiliary[i - 1].size())
+        addTernaryClause(maxsat_formula, ~lits[i], ~seq_auxiliary[i - 1][j],
+                         seq_auxiliary[i][j + 1]);
+
+      if (i > 1 && j + 1 < k && j < seq_auxiliary[i - 1].size() &&
+          j + 1 < seq_auxiliary[i - 1].size()) {
+        addTernaryClause(maxsat_formula, seq_auxiliary[i - 1][j],
+                         seq_auxiliary[i - 1][j + 1], ~seq_auxiliary[i][j + 1]);
+      }
     }
   }
 
-  // Set the maximum sum to be smaller than rhs
-  addUnitClause(maxsat_formula, ~seq_auxiliary[n][rhs]);
-
+  if (current_sign == _PB_GREATER_OR_EQUAL_)
+    addUnitClause(maxsat_formula, seq_auxiliary[n - 1][k - 1]);
+  else
+    addUnitClause(maxsat_formula, ~seq_auxiliary[n - 1][k - 1]);
 }
 
-void USequential::encode(Card *card, MaxSATFormula *maxsat_formula){
+void USequential::encode(Card *card, MaxSATFormula *maxsat_formula) {
 
-    switch (card->_sign){
-      case _PB_EQUAL_:
-        encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-        encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
-        break;
-      case _PB_LESS_OR_EQUAL_:
-        encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
-        break;
-      case _PB_GREATER_OR_EQUAL_:
-        encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-        break;
-      default:
-        assert(false);
-    }
-
+  switch (card->_sign) {
+  case _PB_EQUAL_:
+    encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_LESS_OR_EQUAL_:
+    encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_GREATER_OR_EQUAL_:
+    encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    break;
+  default:
+    assert(false);
+  }
 }

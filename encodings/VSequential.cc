@@ -43,6 +43,29 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   pb_Sign current_sign = sign;
 
+  // simplifications
+  // all literals must be assigned to 0
+  if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, ~lits[i]);
+    }
+    return;
+  }
+  // all literals must be assigned to 1
+  if (rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, lits[i]);
+    }
+    return;
+  }
+  // constraint is no restriction
+  if (rhs == n && current_sign == _PB_LESS_OR_EQUAL_) {
+    return;
+  }
+  if (rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
+    return;
+  }
+
   // transform the constraint to consider the smallest rhs
   if (n - rhs < rhs) {
     int s = 0;
@@ -59,9 +82,6 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   uint64_t k = rhs;
   k++; // for proof logging we always treat it as a _PB_LESS_OR_EQUAL_ ctr
-
-  // TODO: simplify the cardinality constraint?
-  // <= 0 -> all literals are negative; >= n -> all literals are positive
 
   // TODO: creating some variables that may not be used in the encoding
   // Example: if >= we are creating k+1 for the pbp format ;
