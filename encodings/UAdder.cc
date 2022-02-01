@@ -32,79 +32,82 @@
 
 using namespace openwbo;
 
-void UAdder::FA_extra(MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a,
-                      Lit b, Lit c) {
+void UAdder::FA_extra(MaxSATFormula *maxsat_formula, PB *pb, Lit xc, Lit xs,
+                      Lit a, Lit b, Lit c) {
 
   clause.clear();
-  addTernaryClause(maxsat_formula, ~xc, ~xs, a);
-  addTernaryClause(maxsat_formula, ~xc, ~xs, b);
-  addTernaryClause(maxsat_formula, ~xc, ~xs, c);
+  addTernaryClause(maxsat_formula, pb, ~xc, ~xs, a);
+  addTernaryClause(maxsat_formula, pb, ~xc, ~xs, b);
+  addTernaryClause(maxsat_formula, pb, ~xc, ~xs, c);
 
-  addTernaryClause(maxsat_formula, xc, xs, ~a);
-  addTernaryClause(maxsat_formula, xc, xs, ~b);
-  addTernaryClause(maxsat_formula, xc, xs, ~c);
+  addTernaryClause(maxsat_formula, pb, xc, xs, ~a);
+  addTernaryClause(maxsat_formula, pb, xc, xs, ~b);
+  addTernaryClause(maxsat_formula, pb, xc, xs, ~c);
 }
 
-Lit UAdder::FA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c) {
+Lit UAdder::FA_carry(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b,
+                     Lit c) {
 
   Lit x = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addTernaryClause(maxsat_formula, b, c, ~x);
-  addTernaryClause(maxsat_formula, a, c, ~x);
-  addTernaryClause(maxsat_formula, a, b, ~x);
+  addTernaryClause(maxsat_formula, pb, b, c, ~x);
+  addTernaryClause(maxsat_formula, pb, a, c, ~x);
+  addTernaryClause(maxsat_formula, pb, a, b, ~x);
 
-  addTernaryClause(maxsat_formula, ~b, ~c, x);
-  addTernaryClause(maxsat_formula, ~a, ~c, x);
-  addTernaryClause(maxsat_formula, ~a, ~b, x);
+  addTernaryClause(maxsat_formula, pb, ~b, ~c, x);
+  addTernaryClause(maxsat_formula, pb, ~a, ~c, x);
+  addTernaryClause(maxsat_formula, pb, ~a, ~b, x);
 
   return x;
 }
 
-Lit UAdder::FA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c) {
+Lit UAdder::FA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b, Lit c) {
   Lit x = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addQuaternaryClause(maxsat_formula, a, b, c, ~x);
-  addQuaternaryClause(maxsat_formula, a, ~b, ~c, ~x);
-  addQuaternaryClause(maxsat_formula, ~a, b, ~c, ~x);
-  addQuaternaryClause(maxsat_formula, ~a, ~b, c, ~x);
+  addQuaternaryClause(maxsat_formula, pb, a, b, c, ~x);
+  addQuaternaryClause(maxsat_formula, pb, a, ~b, ~c, ~x);
+  addQuaternaryClause(maxsat_formula, pb, ~a, b, ~c, ~x);
+  addQuaternaryClause(maxsat_formula, pb, ~a, ~b, c, ~x);
 
-  addQuaternaryClause(maxsat_formula, ~a, ~b, ~c, x);
-  addQuaternaryClause(maxsat_formula, ~a, b, c, x);
-  addQuaternaryClause(maxsat_formula, a, ~b, c, x);
-  addQuaternaryClause(maxsat_formula, a, b, ~c, x);
+  addQuaternaryClause(maxsat_formula, pb, ~a, ~b, ~c, x);
+  addQuaternaryClause(maxsat_formula, pb, ~a, b, c, x);
+  addQuaternaryClause(maxsat_formula, pb, a, ~b, c, x);
+  addQuaternaryClause(maxsat_formula, pb, a, b, ~c, x);
 
   return x;
 }
 
-Lit UAdder::HA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b) // a AND b
+Lit UAdder::HA_carry(MaxSATFormula *maxsat_formula, PB *pb, Lit a,
+                     Lit b) // a AND b
 {
   Lit x = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addBinaryClause(maxsat_formula, a, ~x);
-  addBinaryClause(maxsat_formula, b, ~x);
-  addTernaryClause(maxsat_formula, ~a, ~b, x);
+  addBinaryClause(maxsat_formula, pb, a, ~x);
+  addBinaryClause(maxsat_formula, pb, b, ~x);
+  addTernaryClause(maxsat_formula, pb, ~a, ~b, x);
 
   return x;
 }
 
-Lit UAdder::HA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b) // a XOR b
+Lit UAdder::HA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a,
+                   Lit b) // a XOR b
 {
   Lit x = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addTernaryClause(maxsat_formula, ~a, ~b, ~x);
-  addTernaryClause(maxsat_formula, a, b, ~x);
+  addTernaryClause(maxsat_formula, pb, ~a, ~b, ~x);
+  addTernaryClause(maxsat_formula, pb, a, b, ~x);
 
-  addTernaryClause(maxsat_formula, ~a, b, x);
-  addTernaryClause(maxsat_formula, a, ~b, x);
+  addTernaryClause(maxsat_formula, pb, ~a, b, x);
+  addTernaryClause(maxsat_formula, pb, a, ~b, x);
 
   return x;
 }
 
-void UAdder::adderTree(MaxSATFormula *maxsat_formula,
+void UAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
                        std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
                        uint64_t log_k) {
   Lit x, y, z;
@@ -126,11 +129,11 @@ void UAdder::adderTree(MaxSATFormula *maxsat_formula,
       buckets[i].pop();
       z = buckets[i].front();
       buckets[i].pop();
-      Lit xc = FA_carry(maxsat_formula, x, y, z);
-      Lit xs = FA_sum(maxsat_formula, x, y, z);
+      Lit xc = FA_carry(maxsat_formula, pb, x, y, z);
+      Lit xs = FA_sum(maxsat_formula, pb, x, y, z);
       buckets[i].push(xs);
       buckets[i + 1].push(xc);
-      FA_extra(maxsat_formula, xc, xs, x, y, z);
+      FA_extra(maxsat_formula, pb, xc, xs, x, y, z);
     }
 
     if (buckets[i].size() == 2) {
@@ -138,8 +141,8 @@ void UAdder::adderTree(MaxSATFormula *maxsat_formula,
       buckets[i].pop();
       y = buckets[i].front();
       buckets[i].pop();
-      buckets[i + 1].push(HA_carry(maxsat_formula, x, y));
-      buckets[i].push(HA_sum(maxsat_formula, x, y));
+      buckets[i + 1].push(HA_carry(maxsat_formula, pb, x, y));
+      buckets[i].push(HA_sum(maxsat_formula, pb, x, y));
     }
 
     result[i] = buckets[i].front();
@@ -150,8 +153,8 @@ void UAdder::adderTree(MaxSATFormula *maxsat_formula,
 // Generates clauses for “xs <= ys”, assuming ys has only constant signals (0 or
 // 1). xs and ys must have the same size
 
-void UAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
-                             std::vector<uint64_t> &ys) {
+void UAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
+                             vec<Lit> &xs, std::vector<uint64_t> &ys) {
   assert((size_t)xs.size() == ys.size());
   vec<Lit> clause;
   bool skip;
@@ -186,7 +189,7 @@ void UAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
 
     clause.push(~xs[i]);
 
-    addClause(maxsat_formula, clause);
+    addClause(maxsat_formula, pb, clause);
   }
 }
 
@@ -250,10 +253,10 @@ void UAdder::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
 
   // TODO: should we simplify the PB constraint?
 
-  encode(maxsat_formula, lits, coeffs, rhs);
+  encode(maxsat_formula, pb, lits, coeffs, rhs);
 }
 
-void UAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
+void UAdder::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
                     vec<uint64_t> &coeffs, uint64_t rhs) {
 
   _output.clear();
@@ -270,11 +273,11 @@ void UAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
     }
   }
 
-  adderTree(maxsat_formula, _buckets, _output, nb);
+  adderTree(maxsat_formula, pb, _buckets, _output, nb);
 
   for (uint64_t i = nb; i < _buckets.size(); i++) {
     while (_buckets[i].size() > 0) {
-      addUnitClause(maxsat_formula, ~_buckets[i].front());
+      addUnitClause(maxsat_formula, pb, ~_buckets[i].front());
       _buckets[i].pop();
     }
   }
@@ -282,7 +285,7 @@ void UAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
   std::vector<uint64_t> kBits;
   numToBits(kBits, _buckets.size(), rhs);
 
-  lessThanOrEqual(maxsat_formula, _output, kBits);
+  lessThanOrEqual(maxsat_formula, pb, _output, kBits);
 }
 
 uint64_t UAdder::ld64(const uint64_t x) {

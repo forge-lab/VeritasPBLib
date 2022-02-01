@@ -55,19 +55,19 @@ protected:
   void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
 
   // Encode constraint.
-  void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
+  void encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
               vec<uint64_t> &coeffs, uint64_t rhs);
 
-  void FA_extra(MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a, Lit b,
-                Lit c);
-  Lit FA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c);
-  Lit FA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c);
-  Lit HA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b);
-  Lit HA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b);
-  void adderTree(MaxSATFormula *maxsat_formula,
+  void FA_extra(MaxSATFormula *maxsat_formula, PB *pb, Lit xc, Lit xs, Lit a,
+                Lit b, Lit c);
+  Lit FA_carry(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b, Lit c);
+  Lit FA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b, Lit c);
+  Lit HA_carry(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b);
+  Lit HA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b);
+  void adderTree(MaxSATFormula *maxsat_formula, PB *pb,
                  std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
                  uint64_t log_k);
-  void lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
+  void lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &xs,
                        std::vector<uint64_t> &ys);
   void numToBits(std::vector<uint64_t> &bits, uint64_t n, uint64_t number);
   uint64_t ld64(const uint64_t x);

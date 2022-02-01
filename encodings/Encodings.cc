@@ -74,28 +74,30 @@ void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula) {
     assert(false);
 }
 
-void Encodings::addUnitClause(MaxSATFormula *mx, Lit a) {
+void Encodings::addUnitClause(MaxSATFormula *mx, Constraint *ctr, Lit a) {
   assert(clause.size() == 0);
   assert(a != lit_Undef);
   assert(var(a) < mx->nVars());
   clause.push(a);
   mx->incId();
-  mx->addHardClause(clause);
+  mx->addHardClause(ctr, clause);
   clause.clear();
 }
 
-void Encodings::addBinaryClause(MaxSATFormula *mx, Lit a, Lit b) {
+void Encodings::addBinaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a,
+                                Lit b) {
   assert(clause.size() == 0);
   assert(a != lit_Undef && b != lit_Undef);
   assert(var(a) < mx->nVars() && var(b) < mx->nVars());
   clause.push(a);
   clause.push(b);
   mx->incId();
-  mx->addHardClause(clause);
+  mx->addHardClause(ctr, clause);
   clause.clear();
 }
 
-void Encodings::addTernaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c) {
+void Encodings::addTernaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a,
+                                 Lit b, Lit c) {
   assert(clause.size() == 0);
   assert(a != lit_Undef && b != lit_Undef && c != lit_Undef);
   assert(var(a) < mx->nVars() && var(b) < mx->nVars() && var(c) < mx->nVars());
@@ -103,12 +105,12 @@ void Encodings::addTernaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c) {
   clause.push(b);
   clause.push(c);
   mx->incId();
-  mx->addHardClause(clause);
+  mx->addHardClause(ctr, clause);
   clause.clear();
 }
 
-void Encodings::addQuaternaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c,
-                                    Lit d) {
+void Encodings::addQuaternaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a,
+                                    Lit b, Lit c, Lit d) {
   assert(clause.size() == 0);
   assert(a != lit_Undef && b != lit_Undef && c != lit_Undef && d != lit_Undef);
   assert(var(a) < mx->nVars() && var(b) < mx->nVars() && var(c) < mx->nVars() &&
@@ -118,16 +120,16 @@ void Encodings::addQuaternaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c,
   clause.push(c);
   clause.push(d);
   mx->incId();
-  mx->addHardClause(clause);
+  mx->addHardClause(ctr, clause);
   clause.clear();
 }
 
-void Encodings::addClause(MaxSATFormula *mx, vec<Lit> &c) {
+void Encodings::addClause(MaxSATFormula *mx, Constraint *ctr, vec<Lit> &c) {
   mx->incId();
-  mx->addHardClause(c);
+  mx->addHardClause(ctr, c);
 }
 
-std::pair<PBPred *, PBPred *> Encodings::reify(Lit z, PB *pb) {
+std::pair<PBPred *, PBPred *> Encodings::reify(Constraint *ctr, Lit z, PB *pb) {
   vec<Lit> lits;
   vec<int64_t> coeffs;
   int64_t sum = 0;
@@ -139,12 +141,12 @@ std::pair<PBPred *, PBPred *> Encodings::reify(Lit z, PB *pb) {
 
   pb->addProduct(~z, pb->_rhs);
   PBPred *pbp_geq = new PBPred(mx->getIncProofLogId(), pb, var(z) + 1, 0);
-  mx->addProofExpr(pbp_geq);
+  mx->addProofExpr(ctr, pbp_geq);
 
   PB *pb_leq = new PB(lits, coeffs, sum - pb->_rhs + 1, _PB_GREATER_OR_EQUAL_);
   pb_leq->addProduct(z, sum - pb->_rhs + 1);
   PBPred *pbp_leq = new PBPred(mx->getIncProofLogId(), pb_leq, var(z) + 1, 1);
-  mx->addProofExpr(pbp_leq);
+  mx->addProofExpr(ctr, pbp_leq);
 
   std::pair<PBPred *, PBPred *> res;
   res.first = pbp_geq;
@@ -152,7 +154,7 @@ std::pair<PBPred *, PBPred *> Encodings::reify(Lit z, PB *pb) {
   return res;
 }
 
-void Encodings::derive_ordering(PBPred *p1, PBPred *p2) {
+void Encodings::derive_ordering(Constraint *ctr, PBPred *p1, PBPred *p2) {
   int d = 0;
   for (int i = 0; i < p1->_ctr->_coeffs.size(); i++) {
     if (var(p1->_ctr->_lits[i]) + 1 != p1->_v)
@@ -161,10 +163,10 @@ void Encodings::derive_ordering(PBPred *p1, PBPred *p2) {
   PBPp *pbp = new PBPp(mx->getIncProofLogId());
   pbp->addition(p1->_ctrid, p2->_ctrid);
   pbp->division(d);
-  mx->addProofExpr(pbp);
+  mx->addProofExpr(ctr, pbp);
 }
 
-int Encodings::derive_sum(vec<PBPred *> &sum) {
+int Encodings::derive_sum(Constraint *ctr, vec<PBPred *> &sum) {
   if (sum.size() < 2) {
     assert(sum.size() == 1);
     return sum[0]->_ctrid;
@@ -181,7 +183,7 @@ int Encodings::derive_sum(vec<PBPred *> &sum) {
       pbp->addition(sum[j - 1]->_ctrid);
     }
     pbp->division(j);
-    mx->addProofExpr(pbp);
+    mx->addProofExpr(ctr, pbp);
 
     // not needed but may make the proof easier to read
     if (j != sum.size())
@@ -192,7 +194,7 @@ int Encodings::derive_sum(vec<PBPred *> &sum) {
   return c;
 }
 
-std::pair<int, int> Encodings::derive_unary_sum(vec<Lit> &left,
+std::pair<int, int> Encodings::derive_unary_sum(Constraint *ctr, vec<Lit> &left,
                                                 vec<Lit> &right) {
   vec<PBPred *> sum_leq;
   vec<PBPred *> sum_geq;
@@ -203,7 +205,7 @@ std::pair<int, int> Encodings::derive_unary_sum(vec<Lit> &left,
     vec<int64_t> coeffs;
     coeffs.growTo(left.size(), 1);
     PB *pb = new PB(left, coeffs, j + 1, _PB_GREATER_OR_EQUAL_);
-    std::pair<PBPred *, PBPred *> p = reify(right[j], pb);
+    std::pair<PBPred *, PBPred *> p = reify(ctr, right[j], pb);
     sum_geq.push(p.first);
     sum_leq.push(p.second);
   }
@@ -214,12 +216,12 @@ std::pair<int, int> Encodings::derive_unary_sum(vec<Lit> &left,
     sum_leq_rev.push(sum_leq[i]);
   }
 
-  int c_geq = derive_sum(sum_geq);
-  int c_leq = derive_sum(sum_leq_rev);
+  int c_geq = derive_sum(ctr, sum_geq);
+  int c_leq = derive_sum(ctr, sum_leq_rev);
 
   for (int i = 0; i < right.size() - 1; i++) {
     if (i + 1 < sum_geq.size()) {
-      derive_ordering(sum_leq[i], sum_geq[i + 1]);
+      derive_ordering(ctr, sum_leq[i], sum_geq[i + 1]);
     }
   }
 

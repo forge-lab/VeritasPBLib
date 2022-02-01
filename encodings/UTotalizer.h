@@ -46,9 +46,10 @@ public:
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
-  void adder(MaxSATFormula *maxsat_formula, vec<Lit> &left, vec<Lit> &right,
-             vec<Lit> &output);
-  void toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits, int64_t k);
+  void adder(MaxSATFormula *maxsat_formula, Card *card, vec<Lit> &left,
+             vec<Lit> &right, vec<Lit> &output);
+  void toCNF(MaxSATFormula *maxsat_formula, Card *card, vec<Lit> &lits,
+             int64_t k);
   int _rhs;
   vec<Lit> cardinality_inlits; // Stores the inputs of the cardinality
                                // constraint encoding for the totalizer encoding
