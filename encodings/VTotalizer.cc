@@ -30,8 +30,8 @@
 
 using namespace openwbo;
 
-void VTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left,
-                       vec<Lit> &right, vec<Lit> &output) {
+void VTotalizer::adder(MaxSATFormula *maxsat_formula, Card *card,
+                       vec<Lit> &left, vec<Lit> &right, vec<Lit> &output) {
   assert(output.size() == left.size() + right.size());
   // We only need to count the sums up to k.
   for (int i = 0; i <= left.size(); i++) {
@@ -43,19 +43,20 @@ void VTotalizer::adder(MaxSATFormula *maxsat_formula, vec<Lit> &left,
         continue;
 
       if (i == 0) {
-        addBinaryClause(maxsat_formula, ~right[j - 1], output[j - 1]);
+        addBinaryClause(maxsat_formula, card, ~right[j - 1], output[j - 1]);
       } else if (j == 0) {
-        addBinaryClause(maxsat_formula, ~left[i - 1], output[i - 1]);
+        addBinaryClause(maxsat_formula, card, ~left[i - 1], output[i - 1]);
       } else {
-        addTernaryClause(maxsat_formula, ~left[i - 1], ~right[j - 1],
+        addTernaryClause(maxsat_formula, card, ~left[i - 1], ~right[j - 1],
                          output[i + j - 1]);
       }
     }
   }
 }
 
-void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
-                       int64_t k, vec<int> &geq, vec<int> &leq) {
+void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, Card *card,
+                       vec<Lit> &lits_out, int64_t k, vec<int> &geq,
+                       vec<int> &leq) {
   vec<Lit> left;
   vec<Lit> right;
 
@@ -89,11 +90,11 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
   }
 
   if (left.size() > 1)
-    toCNF(maxsat_formula, left, k, geq, leq);
+    toCNF(maxsat_formula, card, left, k, geq, leq);
   if (right.size() > 1)
-    toCNF(maxsat_formula, right, k, geq, leq);
+    toCNF(maxsat_formula, card, right, k, geq, leq);
   lits_out.shrink(lits_out.size() - (left.size() + right.size()));
-  adder(maxsat_formula, left, right, lits_out);
+  adder(maxsat_formula, card, left, right, lits_out);
 
   // proof log unary sum
   vec<Lit> lits_in;
@@ -102,7 +103,7 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, vec<Lit> &lits_out,
     lits_in.push(right[i]);
   }
   assert(lits_in.size() == lits_out.size());
-  std::pair<int, int> res_pair = derive_unary_sum(lits_in, lits_out);
+  std::pair<int, int> res_pair = derive_unary_sum(card, lits_in, lits_out);
   geq.push(res_pair.first);
   leq.push(res_pair.second);
 
@@ -132,14 +133,14 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   // all literals must be assigned to 0
   if (_rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
     for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, ~lits[i]);
+      addUnitClause(maxsat_formula, card, ~lits[i]);
     }
     return;
   }
   // all literals must be assigned to 1
   if (_rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
     for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, lits[i]);
+      addUnitClause(maxsat_formula, card, lits[i]);
     }
     return;
   }
@@ -178,13 +179,13 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   vec<int> geq;
   vec<int> leq;
-  toCNF(maxsat_formula, cardinality_outlits, k, geq, leq);
+  toCNF(maxsat_formula, card, cardinality_outlits, k, geq, leq);
   assert(cardinality_inlits.size() == 0);
 
   if (current_sign == _PB_GREATER_OR_EQUAL_) {
-    addUnitClause(maxsat_formula, cardinality_outlits[_rhs - 1]);
+    addUnitClause(maxsat_formula, card, cardinality_outlits[_rhs - 1]);
   } else {
-    addUnitClause(maxsat_formula, ~cardinality_outlits[_rhs]);
+    addUnitClause(maxsat_formula, card, ~cardinality_outlits[_rhs]);
   }
 
   // proof log fixing output
@@ -195,14 +196,14 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
     for (int i = 1; i < leq.size(); i++) {
       pbp->addition(leq[i]);
     }
-    mx->addProofExpr(pbp);
+    mx->addProofExpr(card, pbp);
   } else {
     PBPp *pbp = new PBPp(mx->getIncProofLogId());
     pbp->addition(card->_id, geq[0]);
     for (int i = 1; i < geq.size(); i++) {
       pbp->addition(geq[i]);
     }
-    mx->addProofExpr(pbp);
+    mx->addProofExpr(card, pbp);
   }
 }
 

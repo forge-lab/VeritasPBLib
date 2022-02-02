@@ -4,7 +4,7 @@
  * @section LICENSE
  *
  * Open-WBO, Copyright (c) 2013-2021, Ruben Martins, Vasco Manquinho, Ines Lynce
- * VeritasPBLib, Copyright (c) 2021, Andy Oertel, Stephan Gocht, 
+ * VeritasPBLib, Copyright (c) 2021, Andy Oertel, Stephan Gocht,
  *                                   Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -91,8 +91,8 @@ public:
   Hard() {}
   ~Hard() { clause.clear(); }
 
-  void printPBPu(std::stringstream &ss, varMap& v){
-     assert(clause.size() > 0);
+  void printPBPu(std::stringstream &ss, varMap &v) {
+    assert(clause.size() > 0);
     int rhs = 1;
     ss << "u ";
     for (int i = 0; i < clause.size(); i++) {
@@ -110,7 +110,7 @@ public:
     ss << ">= " << rhs << " ;\n";
   }
 
-  std::string printPBPu(varMap& v) {
+  std::string printPBPu(varMap &v) {
     std::stringstream ss;
     assert(clause.size() > 0);
     int rhs = 1;
@@ -131,7 +131,7 @@ public:
     return ss.str();
   }
 
-  void print(std::stringstream &ss, varMap& v){
+  void print(std::stringstream &ss, varMap &v) {
     assert(clause.size() > 0);
     for (int i = 0; i < clause.size(); i++) {
       if (sign(clause[i]))
@@ -145,7 +145,7 @@ public:
     ss << "0\n";
   }
 
-  std::string print(varMap& v) {
+  std::string print(varMap &v) {
     std::stringstream ss;
     assert(clause.size() > 0);
     for (int i = 0; i < clause.size(); i++) {
@@ -189,10 +189,11 @@ public:
     hard_clauses.clear();
   }
 
-  MaxSATFormula *copyMaxSATFormula();
+  // old method - not needed at the moment (needs fixing)
+  // MaxSATFormula *copyMaxSATFormula();
 
   /*! Add a new hard clause. */
-  void addHardClause(vec<Lit> &lits);
+  void addHardClause(Constraint *ctr, vec<Lit> &lits);
 
   /*! Add a new soft clause. */
   void addSoftClause(uint64_t weight, vec<Lit> &lits);
@@ -234,6 +235,9 @@ public:
   /*! Add a new cardinality constraint. */
   void addCardinalityConstraint(Card *card);
 
+  /*! Return number of cardinality constraint. */
+  int nCardinalityConstraint() { return cardinality_constraints.size(); }
+
   /*! Return i-card constraint. */
   Card *getCardinalityConstraint(int pos) {
     return cardinality_constraints[pos];
@@ -241,6 +245,9 @@ public:
 
   /*! Add a new PB constraint. */
   void addPBConstraint(PB *pb);
+
+  /*! Return number of PB constraint. */
+  int nPBConstraint() { return pb_constraints.size(); }
 
   /*! Return i-PB constraint. */
   PB *getPBConstraint(int pos) { return pb_constraints[pos]; }
@@ -286,12 +293,17 @@ public:
     return proof_log_id;
   }
 
+  void bumpProofLogId(int offset) { proof_log_id += offset; }
+
   void printCNFtoFile(std::string filename);
   void printPBPtoFile(std::string filename);
 
   PBP *getProofExpr(int i) { return proof_expr[i]; }
   int nProofExpr() { return proof_expr.size(); }
-  void addProofExpr(PBP *pbp) { proof_expr.push(pbp); }
+  void addProofExpr(Constraint *ctr, PBP *pbp) {
+    ctr->proof_expr_id.push(proof_expr.size());
+    proof_expr.push(pbp);
+  }
 
   PBP *getProofClauses(int i) { return proof_cls[i]; }
   int nProofClauses() { return proof_cls.size(); }
@@ -301,6 +313,7 @@ protected:
   //
   vec<Soft> soft_clauses; //<! Stores the soft clauses of the MaxSAT formula.
   vec<Hard> hard_clauses; //<! Stores the hard clauses of the MaxSAT formula.
+  vec<int> clause_ids;    //<! Ids of the constraints that are clause.
 
   vec<PBP *> proof_expr; //<! Stores the proof expressions of the PB conversion
   vec<PBP *> proof_cls;  //<! Stores the proof CNF clauses

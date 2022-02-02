@@ -32,81 +32,82 @@
 
 using namespace openwbo;
 
-void VAdder::FA_extra(MaxSATFormula *maxsat_formula, Lit xc, Lit xs, Lit a,
-                      Lit b, Lit c) {
+void VAdder::FA_extra(MaxSATFormula *maxsat_formula, PB *pb, Lit xc, Lit xs,
+                      Lit a, Lit b, Lit c) {
 
   clause.clear();
-  addTernaryClause(maxsat_formula, ~xc, ~xs, a);
-  addTernaryClause(maxsat_formula, ~xc, ~xs, b);
-  addTernaryClause(maxsat_formula, ~xc, ~xs, c);
+  addTernaryClause(maxsat_formula, pb, ~xc, ~xs, a);
+  addTernaryClause(maxsat_formula, pb, ~xc, ~xs, b);
+  addTernaryClause(maxsat_formula, pb, ~xc, ~xs, c);
 
-  addTernaryClause(maxsat_formula, xc, xs, ~a);
-  addTernaryClause(maxsat_formula, xc, xs, ~b);
-  addTernaryClause(maxsat_formula, xc, xs, ~c);
+  addTernaryClause(maxsat_formula, pb, xc, xs, ~a);
+  addTernaryClause(maxsat_formula, pb, xc, xs, ~b);
+  addTernaryClause(maxsat_formula, pb, xc, xs, ~c);
 }
 
-Lit VAdder::FA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c) {
+Lit VAdder::FA_carry(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b,
+                     Lit c) {
   Lit carry = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addTernaryClause(maxsat_formula, b, c, ~carry);
-  addTernaryClause(maxsat_formula, a, c, ~carry);
-  addTernaryClause(maxsat_formula, a, b, ~carry);
+  addTernaryClause(maxsat_formula, pb, b, c, ~carry);
+  addTernaryClause(maxsat_formula, pb, a, c, ~carry);
+  addTernaryClause(maxsat_formula, pb, a, b, ~carry);
 
-  addTernaryClause(maxsat_formula, ~b, ~c, carry);
-  addTernaryClause(maxsat_formula, ~a, ~c, carry);
-  addTernaryClause(maxsat_formula, ~a, ~b, carry);
+  addTernaryClause(maxsat_formula, pb, ~b, ~c, carry);
+  addTernaryClause(maxsat_formula, pb, ~a, ~c, carry);
+  addTernaryClause(maxsat_formula, pb, ~a, ~b, carry);
 
   return carry;
 }
 
-Lit VAdder::FA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b, Lit c) {
+Lit VAdder::FA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b, Lit c) {
   Lit sum = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addQuaternaryClause(maxsat_formula, a, b, c, ~sum);
-  addQuaternaryClause(maxsat_formula, a, ~b, ~c, ~sum);
-  addQuaternaryClause(maxsat_formula, ~a, b, ~c, ~sum);
-  addQuaternaryClause(maxsat_formula, ~a, ~b, c, ~sum);
+  addQuaternaryClause(maxsat_formula, pb, a, b, c, ~sum);
+  addQuaternaryClause(maxsat_formula, pb, a, ~b, ~c, ~sum);
+  addQuaternaryClause(maxsat_formula, pb, ~a, b, ~c, ~sum);
+  addQuaternaryClause(maxsat_formula, pb, ~a, ~b, c, ~sum);
 
-  addQuaternaryClause(maxsat_formula, ~a, ~b, ~c, sum);
-  addQuaternaryClause(maxsat_formula, ~a, b, c, sum);
-  addQuaternaryClause(maxsat_formula, a, ~b, c, sum);
-  addQuaternaryClause(maxsat_formula, a, b, ~c, sum);
+  addQuaternaryClause(maxsat_formula, pb, ~a, ~b, ~c, sum);
+  addQuaternaryClause(maxsat_formula, pb, ~a, b, c, sum);
+  addQuaternaryClause(maxsat_formula, pb, a, ~b, c, sum);
+  addQuaternaryClause(maxsat_formula, pb, a, b, ~c, sum);
 
   return sum;
 }
 
-Lit VAdder::HA_carry(MaxSATFormula *maxsat_formula, Lit a, Lit b) {
+Lit VAdder::HA_carry(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b) {
   Lit carry = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addBinaryClause(maxsat_formula, a, ~carry);
-  addBinaryClause(maxsat_formula, b, ~carry);
-  addTernaryClause(maxsat_formula, ~a, ~b, carry);
+  addBinaryClause(maxsat_formula, pb, a, ~carry);
+  addBinaryClause(maxsat_formula, pb, b, ~carry);
+  addTernaryClause(maxsat_formula, pb, ~a, ~b, carry);
 
   return carry;
 }
 
-Lit VAdder::HA_sum(MaxSATFormula *maxsat_formula, Lit a, Lit b) {
+Lit VAdder::HA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b) {
   Lit sum = mkLit(maxsat_formula->nVars(), false);
   maxsat_formula->newVar();
 
-  addTernaryClause(maxsat_formula, ~a, ~b, ~sum);
-  addTernaryClause(maxsat_formula, a, b, ~sum);
+  addTernaryClause(maxsat_formula, pb, ~a, ~b, ~sum);
+  addTernaryClause(maxsat_formula, pb, a, b, ~sum);
 
-  addTernaryClause(maxsat_formula, ~a, b, sum);
-  addTernaryClause(maxsat_formula, a, ~b, sum);
+  addTernaryClause(maxsat_formula, pb, ~a, b, sum);
+  addTernaryClause(maxsat_formula, pb, a, ~b, sum);
 
   return sum;
 }
 
-void VAdder::adderTree(MaxSATFormula *maxsat_formula,
+void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
                        std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
-                       int pb_id, uint64_t log_k) {
+                       uint64_t log_k) {
   Lit x, y, z;
   Lit u = lit_Undef;
-  int current_constr_id = pb_id;
+  int current_constr_id = pb->_id;
 
   for (size_t i = 0; i < log_k && i < buckets.size(); i++) {
     if (buckets[i].size() == 0)
@@ -127,11 +128,11 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       buckets[i].pop();
       z = buckets[i].front();
       buckets[i].pop();
-      Lit x_carry = FA_carry(maxsat_formula, x, y, z);
-      Lit x_sum = FA_sum(maxsat_formula, x, y, z);
+      Lit x_carry = FA_carry(maxsat_formula, pb, x, y, z);
+      Lit x_sum = FA_sum(maxsat_formula, pb, x, y, z);
       buckets[i + 1].push(x_carry);
       buckets[i].push(x_sum);
-      FA_extra(maxsat_formula, x_carry, x_sum, x, y, z);
+      FA_extra(maxsat_formula, pb, x_carry, x_sum, x, y, z);
 
       // proof log the full adder
       vec<Lit> pb_lits_carry;
@@ -141,7 +142,7 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       vec<int64_t> coeffs_carry(3, 1);
       PB *pb_carry =
           new PB(pb_lits_carry, coeffs_carry, 2, _PB_GREATER_OR_EQUAL_);
-      pair_carry = reify(x_carry, pb_carry);
+      pair_carry = reify(pb, x_carry, pb_carry);
 
       vec<Lit> pb_lits_sum;
       pb_lits_sum.push(x);
@@ -151,17 +152,17 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       vec<int64_t> coeffs_sum(3, 1);
       coeffs_sum.push(2);
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
-      pair_sum = reify(x_sum, pb_sum);
+      pair_sum = reify(pb, x_sum, pb_sum);
 
       PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
       pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
       pbp_geq->addition(pair_sum.first->_ctrid);
       pbp_geq->division(3);
-      mx->addProofExpr(pbp_geq);
+      mx->addProofExpr(pb, pbp_geq);
       PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
       pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
       pbp_geq_sum->addition(current_constr_id);
-      mx->addProofExpr(pbp_geq_sum);
+      mx->addProofExpr(pb, pbp_geq_sum);
       current_constr_id = pbp_geq_sum->_ctrid;
     }
 
@@ -170,8 +171,8 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       buckets[i].pop();
       y = buckets[i].front();
       buckets[i].pop();
-      Lit x_carry = HA_carry(maxsat_formula, x, y);
-      Lit x_sum = HA_sum(maxsat_formula, x, y);
+      Lit x_carry = HA_carry(maxsat_formula, pb, x, y);
+      Lit x_sum = HA_sum(maxsat_formula, pb, x, y);
       buckets[i + 1].push(x_carry);
       buckets[i].push(x_sum);
 
@@ -182,7 +183,7 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       vec<int64_t> coeffs_carry(2, 1);
       PB *pb_carry =
           new PB(pb_lits_carry, coeffs_carry, 2, _PB_GREATER_OR_EQUAL_);
-      pair_carry = reify(x_carry, pb_carry);
+      pair_carry = reify(pb, x_carry, pb_carry);
 
       vec<Lit> pb_lits_sum;
       pb_lits_sum.push(x);
@@ -191,17 +192,17 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
       vec<int64_t> coeffs_sum(2, 1);
       coeffs_sum.push(2);
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
-      pair_sum = reify(x_sum, pb_sum);
+      pair_sum = reify(pb, x_sum, pb_sum);
 
       PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
       pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
       pbp_geq->addition(pair_sum.first->_ctrid);
       pbp_geq->division(3);
-      mx->addProofExpr(pbp_geq);
+      mx->addProofExpr(pb, pbp_geq);
       PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
       pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
       pbp_geq_sum->addition(current_constr_id);
-      mx->addProofExpr(pbp_geq_sum);
+      mx->addProofExpr(pb, pbp_geq_sum);
       current_constr_id = pbp_geq_sum->_ctrid;
     }
 
@@ -213,8 +214,8 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula,
 // Generates clauses for “xs <= ys”, assuming ys has only constant signals (0 or
 // 1). xs and ys must have the same size
 
-void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
-                             std::vector<uint64_t> &ys) {
+void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
+                             vec<Lit> &xs, std::vector<uint64_t> &ys) {
   assert((size_t)xs.size() == ys.size());
   vec<Lit> clause;
   bool skip;
@@ -249,7 +250,7 @@ void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, vec<Lit> &xs,
 
     clause.push(~xs[i]);
 
-    addClause(maxsat_formula, clause);
+    addClause(maxsat_formula, pb, clause);
   }
 }
 
@@ -312,16 +313,13 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
     rhs = s - rhs;
   }
 
-  int pb_id = pb->_id;
-
   // TODO: should we simplify the PB constraint?
 
-  encode(maxsat_formula, lits, coeffs, rhs, sign, pb_id);
+  encode(maxsat_formula, pb, lits, coeffs, rhs, sign);
 }
 
-void VAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
-                    vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign,
-                    int pb_id) {
+void VAdder::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
+                    vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign) {
   _output.clear();
 
   uint64_t nb = ld64(rhs); // number of bits
@@ -336,11 +334,11 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
     }
   }
 
-  adderTree(maxsat_formula, _buckets, _output, pb_id, nb);
+  adderTree(maxsat_formula, pb, _buckets, _output, nb);
 
   for (uint64_t i = nb; i < _buckets.size(); i++) {
     while (_buckets[i].size() > 0) {
-      addUnitClause(maxsat_formula, ~_buckets[i].front());
+      addUnitClause(maxsat_formula, pb, ~_buckets[i].front());
       _buckets[i].pop();
     }
   }
@@ -348,7 +346,7 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
   std::vector<uint64_t> kBits;
   numToBits(kBits, _buckets.size(), rhs);
 
-  lessThanOrEqual(maxsat_formula, _output, kBits);
+  lessThanOrEqual(maxsat_formula, pb, _output, kBits);
 }
 
 uint64_t VAdder::ld64(const uint64_t x) {

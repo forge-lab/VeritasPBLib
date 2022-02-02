@@ -51,10 +51,10 @@ public:
 
 protected:
   void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
-  void encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
-              vec<uint64_t> &coeffs, uint64_t rhs, int pb_id);
+  void encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
+              vec<uint64_t> &coeffs, uint64_t rhs);
 
-  bool encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
+  bool encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
                  const weightedlitst &iliterals, wlit_mapt &oliterals,
                  vec<int> &geq, vec<int> &leq);
   Lit getNewLit(MaxSATFormula *maxsat_formula);
@@ -73,10 +73,12 @@ protected:
 
   // proof logging (left...A, right...B, current...E)
   std::pair<int, int> derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
-                                              wlit_mapt &left, wlit_mapt &right,
+                                              PB *pb, wlit_mapt &left,
+                                              wlit_mapt &right,
                                               wlit_mapt &current);
   weightedlitst sort_to_list(wlit_mapt &map);
-  void try_all_values(weightedlitst &left, weightedlitst &right, Lit &z_eq);
+  void try_all_values(PB *pb, weightedlitst &left, weightedlitst &right,
+                      Lit &z_eq);
 };
 
 } // namespace openwbo

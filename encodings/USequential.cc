@@ -47,14 +47,14 @@ void USequential::encode(Card *card, MaxSATFormula *maxsat_formula,
   // all literals must be assigned to 0
   if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
     for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, ~lits[i]);
+      addUnitClause(maxsat_formula, card, ~lits[i]);
     }
     return;
   }
   // all literals must be assigned to 1
   if (rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
     for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, lits[i]);
+      addUnitClause(maxsat_formula, card, lits[i]);
     }
     return;
   }
@@ -103,43 +103,43 @@ void USequential::encode(Card *card, MaxSATFormula *maxsat_formula,
   if (current_sign == _PB_GREATER_OR_EQUAL_)
     k--;
 
-  addBinaryClause(maxsat_formula, ~lits[0], seq_auxiliary[0][0]);
-  addBinaryClause(maxsat_formula, lits[0], ~seq_auxiliary[0][0]);
+  addBinaryClause(maxsat_formula, card, ~lits[0], seq_auxiliary[0][0]);
+  addBinaryClause(maxsat_formula, card, lits[0], ~seq_auxiliary[0][0]);
 
   for (int i = 1; i < n; i++) {
-    addBinaryClause(maxsat_formula, ~lits[i], seq_auxiliary[i][0]);
+    addBinaryClause(maxsat_formula, card, ~lits[i], seq_auxiliary[i][0]);
 
     if (i + 1 == seq_auxiliary[i].size()) {
-      addBinaryClause(maxsat_formula, lits[i], ~seq_auxiliary[i][i]);
-      addBinaryClause(maxsat_formula, seq_auxiliary[i - 1][i - 1],
+      addBinaryClause(maxsat_formula, card, lits[i], ~seq_auxiliary[i][i]);
+      addBinaryClause(maxsat_formula, card, seq_auxiliary[i - 1][i - 1],
                       ~seq_auxiliary[i][i]);
     }
 
     for (int j = 0; j < k; j++) {
       if (j < seq_auxiliary[i - 1].size())
-        addTernaryClause(maxsat_formula, lits[i], seq_auxiliary[i - 1][j],
+        addTernaryClause(maxsat_formula, card, lits[i], seq_auxiliary[i - 1][j],
                          ~seq_auxiliary[i][j]);
 
       if (j < seq_auxiliary[i - 1].size())
-        addBinaryClause(maxsat_formula, ~seq_auxiliary[i - 1][j],
+        addBinaryClause(maxsat_formula, card, ~seq_auxiliary[i - 1][j],
                         seq_auxiliary[i][j]);
 
       if (j + 1 < k && j < seq_auxiliary[i - 1].size())
-        addTernaryClause(maxsat_formula, ~lits[i], ~seq_auxiliary[i - 1][j],
-                         seq_auxiliary[i][j + 1]);
+        addTernaryClause(maxsat_formula, card, ~lits[i],
+                         ~seq_auxiliary[i - 1][j], seq_auxiliary[i][j + 1]);
 
       if (i > 1 && j + 1 < k && j < seq_auxiliary[i - 1].size() &&
           j + 1 < seq_auxiliary[i - 1].size()) {
-        addTernaryClause(maxsat_formula, seq_auxiliary[i - 1][j],
+        addTernaryClause(maxsat_formula, card, seq_auxiliary[i - 1][j],
                          seq_auxiliary[i - 1][j + 1], ~seq_auxiliary[i][j + 1]);
       }
     }
   }
 
   if (current_sign == _PB_GREATER_OR_EQUAL_)
-    addUnitClause(maxsat_formula, seq_auxiliary[n - 1][k - 1]);
+    addUnitClause(maxsat_formula, card, seq_auxiliary[n - 1][k - 1]);
   else
-    addUnitClause(maxsat_formula, ~seq_auxiliary[n - 1][k - 1]);
+    addUnitClause(maxsat_formula, card, ~seq_auxiliary[n - 1][k - 1]);
 }
 
 void USequential::encode(Card *card, MaxSATFormula *maxsat_formula) {

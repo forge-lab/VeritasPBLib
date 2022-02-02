@@ -45,8 +45,14 @@ namespace openwbo {
 
 typedef std::map<int, int> varMap;
 
+class Constraint {
+public:
+  vec<int> clause_ids;
+  vec<int> proof_expr_id;
+};
+
 // Cardinality constraint of the form atMostK
-class Card {
+class Card : public Constraint {
 
 public:
   Card(vec<Lit> &lits, int64_t rhs, pb_Sign sign = _PB_LESS_OR_EQUAL_,
@@ -93,7 +99,7 @@ public:
 };
 
 // PB constraint. The constraint sign is encoded in the structure.
-class PB {
+class PB : public Constraint {
 
 public:
   PB(vec<Lit> &lits, vec<int64_t> &coeffs, int64_t rhs,

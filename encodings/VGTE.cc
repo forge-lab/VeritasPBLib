@@ -40,7 +40,7 @@ struct less_than_wlitt {
 };
 
 // left...A, right...B
-void VGTE::try_all_values(weightedlitst &left, weightedlitst &right,
+void VGTE::try_all_values(PB *pb, weightedlitst &left, weightedlitst &right,
                           Lit &z_eq) {
   int constr_outer_id = 0;
   for (uint left_i = 0; left_i < left.size(); left_i++) {
@@ -61,11 +61,11 @@ void VGTE::try_all_values(weightedlitst &left, weightedlitst &right,
         lits.push(right[right_i + 1].lit);
       }
       PBPu *pbp_single_try = new PBPu(mx->getIncProofLogId(), lits);
-      mx->addProofExpr(pbp_single_try);
+      mx->addProofExpr(pb, pbp_single_try);
       if (constr_inner_id) {
         PBPp *pbp_inner = new PBPp(mx->getIncProofLogId());
         pbp_inner->addition(constr_inner_id, pbp_single_try->_ctrid);
-        mx->addProofExpr(pbp_inner);
+        mx->addProofExpr(pb, pbp_inner);
         constr_inner_id = pbp_inner->_ctrid;
       } else {
         constr_inner_id = pbp_single_try->_ctrid;
@@ -76,12 +76,12 @@ void VGTE::try_all_values(weightedlitst &left, weightedlitst &right,
     if (constr_outer_id) {
       pbp_outer->addition(constr_outer_id);
     }
-    mx->addProofExpr(pbp_outer);
+    mx->addProofExpr(pb, pbp_outer);
     constr_outer_id = pbp_outer->_ctrid;
   }
   PBPp *pbp_final = new PBPp(mx->getIncProofLogId());
   pbp_final->saturation(constr_outer_id);
-  mx->addProofExpr(pbp_final);
+  mx->addProofExpr(pb, pbp_final);
 }
 
 weightedlitst VGTE::sort_to_list(wlit_mapt &map) {
@@ -102,7 +102,7 @@ weightedlitst VGTE::sort_to_list(wlit_mapt &map) {
 }
 
 std::pair<int, int> VGTE::derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
-                                                  wlit_mapt &left,
+                                                  PB *pb, wlit_mapt &left,
                                                   wlit_mapt &right,
                                                   wlit_mapt &current) {
   // construct left hand site of the preserving equality
@@ -130,10 +130,11 @@ std::pair<int, int> VGTE::derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
        current_it != current.end(); current_it++) {
     PB *pb_single_var =
         new PB(lits, coeffs, current_it->first, _PB_GREATER_OR_EQUAL_);
-    std::pair<PBPred *, PBPred *> p = reify(current_it->second, pb_single_var);
+    std::pair<PBPred *, PBPred *> p =
+        reify(pb, current_it->second, pb_single_var);
     if (p_prev != NULL) {
       assert(p_prev);
-      derive_ordering(p_prev, p.first);
+      derive_ordering(pb, p_prev, p.first);
     }
     p_prev = p.second;
   }
@@ -148,7 +149,7 @@ std::pair<int, int> VGTE::derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
   }
   Lit z_geq = getNewLit(maxsat_formula);
   PB *pb_full_geq = new PB(lits, coeffs, weight_prev, _PB_GREATER_OR_EQUAL_);
-  std::pair<PBPred *, PBPred *> p_geq = reify(z_geq, pb_full_geq);
+  std::pair<PBPred *, PBPred *> p_geq = reify(pb, z_geq, pb_full_geq);
 
   int64_t sum = 0;
   for (int i = 0; i < lits.size(); i++) {
@@ -158,7 +159,7 @@ std::pair<int, int> VGTE::derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
   Lit z_leq = getNewLit(maxsat_formula);
   PB *pb_full_leq =
       new PB(lits, coeffs, sum - weight_prev, _PB_GREATER_OR_EQUAL_);
-  std::pair<PBPred *, PBPred *> p_leq = reify(z_leq, pb_full_leq);
+  std::pair<PBPred *, PBPred *> p_leq = reify(pb, z_leq, pb_full_leq);
 
   Lit z_eq = getNewLit(maxsat_formula);
   vec<int64_t> coeffs_eq;
@@ -167,9 +168,9 @@ std::pair<int, int> VGTE::derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
   lits_eq.push(z_geq);
   lits_eq.push(z_leq);
   PB *pb_full_eq = new PB(lits_eq, coeffs_eq, 2, _PB_GREATER_OR_EQUAL_);
-  reify(z_eq, pb_full_eq);
+  reify(pb, z_eq, pb_full_eq);
 
-  try_all_values(left_list, right_list, z_eq);
+  try_all_values(pb, left_list, right_list, z_eq);
 
   // derive constraint to be derived from its reification
   uint64_t sum_max = left_list[left_list.size() - 1].weight +
@@ -177,20 +178,20 @@ std::pair<int, int> VGTE::derive_sparse_unary_sum(MaxSATFormula *maxsat_formula,
   vec<Lit> lits_geq;
   lits_geq.push(z_geq);
   PBPu *pbp_rup_geq = new PBPu(mx->getIncProofLogId(), lits_geq);
-  mx->addProofExpr(pbp_rup_geq);
+  mx->addProofExpr(pb, pbp_rup_geq);
   PBPp *pbp_p_geq = new PBPp(mx->getIncProofLogId());
   pbp_p_geq->multiplication(pbp_rup_geq->_ctrid, sum_max);
   pbp_p_geq->addition(p_geq.first->_ctrid);
-  mx->addProofExpr(pbp_p_geq);
+  mx->addProofExpr(pb, pbp_p_geq);
 
   vec<Lit> lits_leq;
   lits_leq.push(z_leq);
   PBPu *pbp_rup_leq = new PBPu(mx->getIncProofLogId(), lits_leq);
-  mx->addProofExpr(pbp_rup_leq);
+  mx->addProofExpr(pb, pbp_rup_leq);
   PBPp *pbp_p_leq = new PBPp(mx->getIncProofLogId());
   pbp_p_leq->multiplication(pbp_rup_leq->_ctrid, sum_max);
   pbp_p_leq->addition(p_leq.first->_ctrid);
-  mx->addProofExpr(pbp_p_leq);
+  mx->addProofExpr(pb, pbp_p_leq);
 
   std::pair<int, int> res;
   res.first = pbp_p_geq->_ctrid;
@@ -218,7 +219,7 @@ Lit VGTE::get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
 }
 
 // recursive algorithm that actually encodes the PB constraint
-bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
+bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
                      const weightedlitst &iliterals, wlit_mapt &oliterals,
                      vec<int> &geq, vec<int> &leq) {
   if (iliterals.size() == 0 || k == 0)
@@ -254,10 +255,11 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
 
   // process recursion (with fresh constructed left and right literals)
   // -> literal lists are different for each call
-  bool result = encodeLeq(lk, maxsat_formula, linputs, loutputs, geq, leq);
+  bool result = encodeLeq(lk, maxsat_formula, pb, linputs, loutputs, geq, leq);
   if (!result)
     return result;
-  result = result && encodeLeq(rk, maxsat_formula, rinputs, routputs, geq, leq);
+  result =
+      result && encodeLeq(rk, maxsat_formula, pb, rinputs, routputs, geq, leq);
   if (!result)
     return result;
 
@@ -267,7 +269,7 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
 
     for (wlit_mapt::iterator left_it = loutputs.begin();
          left_it != loutputs.end(); left_it++) {
-      addBinaryClause(maxsat_formula, ~left_it->second,
+      addBinaryClause(maxsat_formula, pb, ~left_it->second,
                       get_var(maxsat_formula, oliterals, left_it->first));
     }
   }
@@ -277,7 +279,7 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
 
     for (wlit_mapt::iterator right_it = routputs.begin();
          right_it != routputs.end(); right_it++) {
-      addBinaryClause(maxsat_formula, ~right_it->second,
+      addBinaryClause(maxsat_formula, pb, ~right_it->second,
                       get_var(maxsat_formula, oliterals, right_it->first));
     }
   }
@@ -288,13 +290,13 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula,
     for (wlit_mapt::iterator rit = routputs.begin(); rit != routputs.end();
          rit++) {
       uint64_t tw = lit->first + rit->first;
-      addTernaryClause(maxsat_formula, ~lit->second, ~rit->second,
+      addTernaryClause(maxsat_formula, pb, ~lit->second, ~rit->second,
                        get_var(maxsat_formula, oliterals, tw));
     }
   }
 
-  std::pair<int, int> res_pair =
-      derive_sparse_unary_sum(maxsat_formula, loutputs, routputs, oliterals);
+  std::pair<int, int> res_pair = derive_sparse_unary_sum(
+      maxsat_formula, pb, loutputs, routputs, oliterals);
   geq.push(res_pair.first);
   leq.push(res_pair.second);
 
@@ -360,11 +362,11 @@ void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
     rhs = s - rhs;
   }
 
-  encode(maxsat_formula, lits, coeffs, rhs, pb->_id);
+  encode(maxsat_formula, pb, lits, coeffs, rhs);
 }
 
-void VGTE::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
-                  vec<uint64_t> &coeffs, uint64_t rhs, int pb_id) {
+void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
+                  vec<uint64_t> &coeffs, uint64_t rhs) {
   // FIXME: do not change coeffs in this method. Make coeffs const.
 
   // If the rhs is larger than INT32_MAX is not feasible to encode this
@@ -398,7 +400,7 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
       lits.push(simp_lits[i]);
       coeffs.push(simp_coeffs[i]);
     } else
-      addUnitClause(maxsat_formula, ~simp_lits[i]);
+      addUnitClause(maxsat_formula, pb, ~simp_lits[i]);
   }
 
   if (lits.size() == 1) {
@@ -420,21 +422,21 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, vec<Lit> &lits,
   std::sort(iliterals.begin(), iliterals.end(), lt_wlit);
   vec<int> geq;
   vec<int> leq;
-  encodeLeq(rhs + 1, maxsat_formula, iliterals, pb_oliterals, geq, leq);
+  encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
 
   // begin proof log output
   PBPp *pbp_output = new PBPp(mx->getIncProofLogId());
-  pbp_output->addition(pb_id, geq[0]);
+  pbp_output->addition(pb->_id, geq[0]);
   for (int i = 1; i < geq.size(); i++) {
     pbp_output->addition(geq[i]);
   }
-  mx->addProofExpr(pbp_output);
+  mx->addProofExpr(pb, pbp_output);
   // end proof log output
 
   for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
        rit != pb_oliterals.rend(); rit++) {
     if (rit->first > rhs) {
-      addUnitClause(maxsat_formula, ~rit->second);
+      addUnitClause(maxsat_formula, pb, ~rit->second);
     } else {
       break;
     }

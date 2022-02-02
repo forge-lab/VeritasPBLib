@@ -31,31 +31,33 @@
 
 using namespace openwbo;
 
-MaxSATFormula *MaxSATFormula::copyMaxSATFormula() {
-  assert(format == _FORMAT_MAXSAT_);
+// old method - not needed at the moment (needs fixing)
+// MaxSATFormula *MaxSATFormula::copyMaxSATFormula() {
+//   assert(format == _FORMAT_MAXSAT_);
 
-  MaxSATFormula *copymx = new MaxSATFormula();
-  copymx->setInitialVars(nVars());
+//   MaxSATFormula *copymx = new MaxSATFormula();
+//   copymx->setInitialVars(nVars());
 
-  for (int i = 0; i < nVars(); i++)
-    copymx->newVar();
+//   for (int i = 0; i < nVars(); i++)
+//     copymx->newVar();
 
-  for (int i = 0; i < nSoft(); i++)
-    copymx->addSoftClause(getSoftClause(i).weight, getSoftClause(i).clause);
+//   for (int i = 0; i < nSoft(); i++)
+//     copymx->addSoftClause(getSoftClause(i).weight, getSoftClause(i).clause);
 
-  for (int i = 0; i < nHard(); i++)
-    copymx->addHardClause(getHardClause(i).clause);
+//   for (int i = 0; i < nHard(); i++)
+//     copymx->addHardClause(NULL, getHardClause(i).clause);
 
-  copymx->setProblemType(getProblemType());
-  copymx->updateSumWeights(getSumWeights());
-  copymx->setMaximumWeight(getMaximumWeight());
-  copymx->setHardWeight(getHardWeight());
+//   copymx->setProblemType(getProblemType());
+//   copymx->updateSumWeights(getSumWeights());
+//   copymx->setMaximumWeight(getMaximumWeight());
+//   copymx->setHardWeight(getHardWeight());
 
-  return copymx;
-}
+//   return copymx;
+// }
 
 // Adds a new hard clause to the hard clause database.
-void MaxSATFormula::addHardClause(vec<Lit> &lits) {
+void MaxSATFormula::addHardClause(Constraint *ctr, vec<Lit> &lits) {
+  ctr->clause_ids.push(n_hard);
   hard_clauses.push();
   vec<Lit> copy_lits;
   lits.copyTo(copy_lits);
@@ -174,15 +176,18 @@ void MaxSATFormula::addPBConstraint(PB *p) {
         unit.push(p->_lits[0]);
       else
         assert(false);
-      addHardClause(unit);
+      clause_ids.push(n_hard);
+      addHardClause(p, unit);
     } else if (p->_sign == _PB_GREATER_OR_EQUAL_) {
-      addHardClause(p->_lits);
+      clause_ids.push(n_hard);
+      addHardClause(p, p->_lits);
     } else {
       vec<Lit> neg_lits;
       for (int i = 0; i < p->_lits.size(); i++) {
         neg_lits.push(~p->_lits[i]);
       }
-      addHardClause(neg_lits);
+      clause_ids.push(n_hard);
+      addHardClause(p, neg_lits);
     }
   } else if (p->isCardinality()) {
     cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
@@ -267,21 +272,41 @@ void MaxSATFormula::printPBPtoFile(std::string filename) {
   std::ofstream file;
   std::stringstream ss;
   file.open(filename + ".pbp");
-  ss << "pseudo-Boolean proof version 1.2\nf\n# 1\n";
+  ss << "pseudo-Boolean proof version 1.2\nf\n";
 
-  for (int i = 0; i < nProofExpr(); i++) {
-    PBP *pbp = getProofExpr(i);
-    pbp->print(ss, getVarMap());
+  for (int i = 0; i < nCardinalityConstraint(); i++) {
+    ss << "# 1\n";
+    Card *card = getCardinalityConstraint(i);
+    for (int j = 0; j < card->proof_expr_id.size(); j++) {
+      PBP *pbp = getProofExpr(card->proof_expr_id[j]);
+      pbp->print(ss, getVarMap());
+    }
+    ss << "# 0\n";
+    for (int j = 0; j < card->clause_ids.size(); j++) {
+      Hard &hard = getHardClause(card->clause_ids[j]);
+      hard.printPBPu(ss, getVarMap());
+    }
+    ss << "w 1\n";
   }
-
-  ss << "# 0\n";
-
-  for (int i = 0; i < nHard(); i++) {
-    Hard &hard = getHardClause(i);
+  for (int i = 0; i < nPBConstraint(); i++) {
+    ss << "# 1\n";
+    PB *pb = getPBConstraint(i);
+    for (int j = 0; j < pb->proof_expr_id.size(); j++) {
+      PBP *pbp = getProofExpr(pb->proof_expr_id[j]);
+      pbp->print(ss, getVarMap());
+    }
+    ss << "# 0\n";
+    for (int j = 0; j < pb->clause_ids.size(); j++) {
+      Hard &hard = getHardClause(pb->clause_ids[j]);
+      hard.printPBPu(ss, getVarMap());
+    }
+    ss << "w 1\n";
+  }
+  for (int i = 0; i < clause_ids.size(); i++) {
+    Hard &hard = getHardClause(clause_ids[i]);
     hard.printPBPu(ss, getVarMap());
   }
 
-  ss << " w 1\n";
   file << ss.rdbuf();
   file.close();
 }

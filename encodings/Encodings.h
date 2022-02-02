@@ -57,11 +57,13 @@ public:
 
   // Auxiliary methods for creating clauses
   //
-  void addUnitClause(MaxSATFormula *mx, Lit a);
-  void addBinaryClause(MaxSATFormula *mx, Lit a, Lit b);
-  void addTernaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c);
-  void addQuaternaryClause(MaxSATFormula *mx, Lit a, Lit b, Lit c, Lit d);
-  void addClause(MaxSATFormula *mx, vec<Lit> &c);
+  void addUnitClause(MaxSATFormula *mx, Constraint *ctr, Lit a);
+  void addBinaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a, Lit b);
+  void addTernaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a, Lit b,
+                        Lit c);
+  void addQuaternaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a, Lit b,
+                           Lit c, Lit d);
+  void addClause(MaxSATFormula *mx, Constraint *ctr, vec<Lit> &c);
   void encode(Card *card, MaxSATFormula *maxsat_formula);
   void encode(PB *pb, MaxSATFormula *maxsat_formula);
 
@@ -72,10 +74,11 @@ protected:
 
   // Auxillary methods for proof logging
   MaxSATFormula *mx;
-  std::pair<PBPred *, PBPred *> reify(Lit z, PB *pb);
-  void derive_ordering(PBPred *p1, PBPred *p2);
-  int derive_sum(vec<PBPred *> &sum);
-  std::pair<int, int> derive_unary_sum(vec<Lit> &left, vec<Lit> &right);
+  std::pair<PBPred *, PBPred *> reify(Constraint *ctr, Lit z, PB *pb);
+  void derive_ordering(Constraint *ctr, PBPred *p1, PBPred *p2);
+  int derive_sum(Constraint *ctr, vec<PBPred *> &sum);
+  std::pair<int, int> derive_unary_sum(Constraint *ctr, vec<Lit> &left,
+                                       vec<Lit> &right);
 };
 } // namespace openwbo
 
