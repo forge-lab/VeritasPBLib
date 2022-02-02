@@ -31,32 +31,33 @@
 
 using namespace openwbo;
 
-MaxSATFormula *MaxSATFormula::copyMaxSATFormula() {
-  assert(format == _FORMAT_MAXSAT_);
+// old method - not needed at the moment (needs fixing)
+// MaxSATFormula *MaxSATFormula::copyMaxSATFormula() {
+//   assert(format == _FORMAT_MAXSAT_);
 
-  MaxSATFormula *copymx = new MaxSATFormula();
-  copymx->setInitialVars(nVars());
+//   MaxSATFormula *copymx = new MaxSATFormula();
+//   copymx->setInitialVars(nVars());
 
-  for (int i = 0; i < nVars(); i++)
-    copymx->newVar();
+//   for (int i = 0; i < nVars(); i++)
+//     copymx->newVar();
 
-  for (int i = 0; i < nSoft(); i++)
-    copymx->addSoftClause(getSoftClause(i).weight, getSoftClause(i).clause);
+//   for (int i = 0; i < nSoft(); i++)
+//     copymx->addSoftClause(getSoftClause(i).weight, getSoftClause(i).clause);
 
-  for (int i = 0; i < nHard(); i++)
-    copymx->addHardClause(NULL, getHardClause(i).clause);
+//   for (int i = 0; i < nHard(); i++)
+//     copymx->addHardClause(NULL, getHardClause(i).clause);
 
-  copymx->setProblemType(getProblemType());
-  copymx->updateSumWeights(getSumWeights());
-  copymx->setMaximumWeight(getMaximumWeight());
-  copymx->setHardWeight(getHardWeight());
+//   copymx->setProblemType(getProblemType());
+//   copymx->updateSumWeights(getSumWeights());
+//   copymx->setMaximumWeight(getMaximumWeight());
+//   copymx->setHardWeight(getHardWeight());
 
-  return copymx;
-}
+//   return copymx;
+// }
 
 // Adds a new hard clause to the hard clause database.
 void MaxSATFormula::addHardClause(Constraint *ctr, vec<Lit> &lits) {
-  ctr->clause_id.push(hard_clauses.size());
+  ctr->clause_ids.push(n_hard);
   hard_clauses.push();
   vec<Lit> copy_lits;
   lits.copyTo(copy_lits);
@@ -175,14 +176,17 @@ void MaxSATFormula::addPBConstraint(PB *p) {
         unit.push(p->_lits[0]);
       else
         assert(false);
+      clause_ids.push(n_hard);
       addHardClause(p, unit);
     } else if (p->_sign == _PB_GREATER_OR_EQUAL_) {
+      clause_ids.push(n_hard);
       addHardClause(p, p->_lits);
     } else {
       vec<Lit> neg_lits;
       for (int i = 0; i < p->_lits.size(); i++) {
         neg_lits.push(~p->_lits[i]);
       }
+      clause_ids.push(n_hard);
       addHardClause(p, neg_lits);
     }
   } else if (p->isCardinality()) {
@@ -278,8 +282,8 @@ void MaxSATFormula::printPBPtoFile(std::string filename) {
       pbp->print(ss, getVarMap());
     }
     ss << "# 0\n";
-    for (int j = 0; j < card->clause_id.size(); j++) {
-      Hard &hard = getHardClause(card->clause_id[j]);
+    for (int j = 0; j < card->clause_ids.size(); j++) {
+      Hard &hard = getHardClause(card->clause_ids[j]);
       hard.printPBPu(ss, getVarMap());
     }
     ss << "w 1\n";
@@ -292,11 +296,15 @@ void MaxSATFormula::printPBPtoFile(std::string filename) {
       pbp->print(ss, getVarMap());
     }
     ss << "# 0\n";
-    for (int j = 0; j < pb->clause_id.size(); j++) {
-      Hard &hard = getHardClause(pb->clause_id[j]);
+    for (int j = 0; j < pb->clause_ids.size(); j++) {
+      Hard &hard = getHardClause(pb->clause_ids[j]);
       hard.printPBPu(ss, getVarMap());
     }
     ss << "w 1\n";
+  }
+  for (int i = 0; i < clause_ids.size(); i++) {
+    Hard &hard = getHardClause(clause_ids[i]);
+    hard.printPBPu(ss, getVarMap());
   }
 
   file << ss.rdbuf();

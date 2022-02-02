@@ -47,7 +47,7 @@ typedef std::map<int, int> varMap;
 
 class Constraint {
 public:
-  vec<int> clause_id;
+  vec<int> clause_ids;
   vec<int> proof_expr_id;
 };
 

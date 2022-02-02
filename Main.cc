@@ -203,13 +203,13 @@ int main(int argc, char **argv) {
     for (int i = 0; i < maxsat_formula->nCard(); i++) {
       Card *c = maxsat_formula->getCardinalityConstraint(i);
       encoder->encode(c, maxsat_formula);
-      maxsat_formula->bumpProofLogId(c->clause_id.size());
+      maxsat_formula->bumpProofLogId(c->clause_ids.size());
     }
 
     for (int i = 0; i < maxsat_formula->nPB(); i++) {
       PB *p = maxsat_formula->getPBConstraint(i);
       encoder->encode(p, maxsat_formula);
-      maxsat_formula->bumpProofLogId(p->clause_id.size());
+      maxsat_formula->bumpProofLogId(p->clause_ids.size());
     }
 
     std::string filename(argv[1]);

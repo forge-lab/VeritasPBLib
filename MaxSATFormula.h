@@ -189,7 +189,8 @@ public:
     hard_clauses.clear();
   }
 
-  MaxSATFormula *copyMaxSATFormula();
+  // old method - not needed at the moment (needs fixing)
+  // MaxSATFormula *copyMaxSATFormula();
 
   /*! Add a new hard clause. */
   void addHardClause(Constraint *ctr, vec<Lit> &lits);
@@ -312,6 +313,7 @@ protected:
   //
   vec<Soft> soft_clauses; //<! Stores the soft clauses of the MaxSAT formula.
   vec<Hard> hard_clauses; //<! Stores the hard clauses of the MaxSAT formula.
+  vec<int> clause_ids;    //<! Ids of the constraints that are clause.
 
   vec<PBP *> proof_expr; //<! Stores the proof expressions of the PB conversion
   vec<PBP *> proof_cls;  //<! Stores the proof CNF clauses
