@@ -52,11 +52,11 @@ protected:
   vec<Lit> clause;
   std::vector<std::queue<Lit>> _buckets;
 
-  void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
+  void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign);
 
   // Encode constraint.
   void encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign);
+              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign);
 
   void FA_extra(MaxSATFormula *maxsat_formula, PB *pb, Lit xc, Lit xs, Lit a,
                 Lit b, Lit c);
@@ -69,6 +69,8 @@ protected:
                  uint64_t log_k);
   void lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &xs,
                        std::vector<uint64_t> &ys);
+  void greaterThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &xs,
+                          std::vector<uint64_t> &ys);
   void numToBits(std::vector<uint64_t> &bits, uint64_t n, uint64_t number);
   uint64_t ld64(const uint64_t x);
 };

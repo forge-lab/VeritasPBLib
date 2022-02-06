@@ -107,9 +107,10 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
                        uint64_t log_k) {
   Lit x, y, z;
   Lit u = lit_Undef;
-  int current_constr_id = pb->_id;
+  int current_constr_id_geq = pb->_id;
+  int current_constr_id_leq = pb->_id;
 
-  for (size_t i = 0; i < log_k && i < buckets.size(); i++) {
+  for (size_t i = 0; /*i < log_k &&*/ i < buckets.size(); i++) {
     if (buckets[i].size() == 0)
       continue;
 
@@ -161,9 +162,20 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
       mx->addProofExpr(pb, pbp_geq);
       PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
       pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
-      pbp_geq_sum->addition(current_constr_id);
+      pbp_geq_sum->addition(current_constr_id_geq);
       mx->addProofExpr(pb, pbp_geq_sum);
-      current_constr_id = pbp_geq_sum->_ctrid;
+      current_constr_id_geq = pbp_geq_sum->_ctrid;
+
+      PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
+      pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
+      pbp_leq->addition(pair_sum.second->_ctrid);
+      pbp_leq->division(3);
+      mx->addProofExpr(pb, pbp_leq);
+      PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
+      pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
+      pbp_leq_sum->addition(current_constr_id_leq);
+      mx->addProofExpr(pb, pbp_leq_sum);
+      current_constr_id_leq = pbp_leq_sum->_ctrid;
     }
 
     if (buckets[i].size() == 2) {
@@ -201,9 +213,20 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
       mx->addProofExpr(pb, pbp_geq);
       PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
       pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
-      pbp_geq_sum->addition(current_constr_id);
+      pbp_geq_sum->addition(current_constr_id_geq);
       mx->addProofExpr(pb, pbp_geq_sum);
-      current_constr_id = pbp_geq_sum->_ctrid;
+      current_constr_id_geq = pbp_geq_sum->_ctrid;
+
+      PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
+      pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
+      pbp_leq->addition(pair_sum.second->_ctrid);
+      pbp_leq->division(3);
+      mx->addProofExpr(pb, pbp_leq);
+      PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
+      pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
+      pbp_leq_sum->addition(current_constr_id_leq);
+      mx->addProofExpr(pb, pbp_leq_sum);
+      current_constr_id_leq = pbp_leq_sum->_ctrid;
     }
 
     result[i] = buckets[i].front();
@@ -213,7 +236,6 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
 
 // Generates clauses for “xs <= ys”, assuming ys has only constant signals (0 or
 // 1). xs and ys must have the same size
-
 void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
                              vec<Lit> &xs, std::vector<uint64_t> &ys) {
   assert((size_t)xs.size() == ys.size());
@@ -224,23 +246,18 @@ void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
       continue;
 
     clause.clear();
-
     skip = false;
-
     for (int j = i + 1; j < xs.size(); ++j) {
       if (ys[j] == 1) {
         if (xs[j] == lit_Undef) {
           skip = true;
           break;
         }
-
         clause.push(~xs[j]);
       } else {
         assert(ys[j] == 0);
-
         if (xs[j] == lit_Undef)
           continue;
-
         clause.push(xs[j]);
       }
     }
@@ -249,7 +266,42 @@ void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
       continue;
 
     clause.push(~xs[i]);
+    addClause(maxsat_formula, pb, clause);
+  }
+}
 
+// Generates clauses for “xs >= ys”, assuming ys has only constant signals (0 or
+// 1). xs and ys must have the same size
+void VAdder::greaterThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
+                                vec<Lit> &xs, std::vector<uint64_t> &ys) {
+  assert((size_t)xs.size() == ys.size());
+  vec<Lit> clause;
+  bool skip;
+  for (int i = 0; i < xs.size(); ++i) {
+    if (ys[i] == 0 || xs[i] == lit_Undef)
+      continue;
+
+    clause.clear();
+    skip = false;
+    for (int j = i + 1; j < xs.size(); ++j) {
+      if (ys[j] == 0) {
+        if (xs[j] == lit_Undef) {
+          skip = true;
+          break;
+        }
+        clause.push(xs[j]);
+      } else {
+        assert(ys[j] == 1);
+        if (xs[j] == lit_Undef)
+          continue;
+        clause.push(~xs[j]);
+      }
+    }
+
+    if (skip)
+      continue;
+
+    clause.push(xs[i]);
     addClause(maxsat_formula, pb, clause);
   }
 }
@@ -290,36 +342,64 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula) {
   }
 }
 
-void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
-  assert(sign != _PB_EQUAL_);
+void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
+                    pb_Sign current_sign) {
+  assert(current_sign != _PB_EQUAL_);
 
   vec<Lit> lits;
+  uint64_t sum = 0;
   vec<uint64_t> coeffs;
 
   pb->_lits.copyTo(lits);
   for (int i = 0; i < pb->_coeffs.size(); i++) {
     assert(pb->_coeffs[i] > 0);
     coeffs.push(pb->_coeffs[i]);
+    sum += pb->_coeffs[i];
   }
   uint64_t rhs = pb->_rhs;
 
-  // transform it into <=
-  if (sign == _PB_GREATER_OR_EQUAL_) {
-    int s = 0;
-    for (int i = 0; i < coeffs.size(); i++) {
-      s += coeffs[i];
+  // simplifications
+  // all literals must be assigned to 0
+  if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, pb, ~lits[i]);
+    }
+    return;
+  }
+  // all literals must be assigned to 1
+  if (rhs == sum && current_sign == _PB_GREATER_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, pb, lits[i]);
+    }
+    return;
+  }
+  // constraint is no restriction
+  if (rhs == sum && current_sign == _PB_LESS_OR_EQUAL_) {
+    return;
+  }
+  if (rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
+    return;
+  }
+
+  // transform the constraint to consider the smallest rhs
+  if (sum - rhs < rhs) {
+    for (int i = 0; i < lits.size(); i++) {
       lits[i] = ~(lits[i]);
     }
-    rhs = s - rhs;
+    rhs = sum - rhs;
+    if (current_sign == _PB_GREATER_OR_EQUAL_)
+      current_sign = _PB_LESS_OR_EQUAL_;
+    else
+      current_sign = _PB_GREATER_OR_EQUAL_;
   }
 
   // TODO: should we simplify the PB constraint?
 
-  encode(maxsat_formula, pb, lits, coeffs, rhs, sign);
+  encode(maxsat_formula, pb, lits, coeffs, rhs, current_sign);
 }
 
 void VAdder::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-                    vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign sign) {
+                    vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign) {
   _output.clear();
 
   uint64_t nb = ld64(rhs); // number of bits
@@ -336,17 +416,22 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
 
   adderTree(maxsat_formula, pb, _buckets, _output, nb);
 
-  for (uint64_t i = nb; i < _buckets.size(); i++) {
-    while (_buckets[i].size() > 0) {
-      addUnitClause(maxsat_formula, pb, ~_buckets[i].front());
-      _buckets[i].pop();
-    }
-  }
+  // k-simplification
+  //  for (uint64_t i = nb; i < _buckets.size(); i++) {
+  //    while (_buckets[i].size() > 0) {
+  //      addUnitClause(maxsat_formula, pb, ~_buckets[i].front());
+  //      _buckets[i].pop();
+  //    }
+  //  }
 
   std::vector<uint64_t> kBits;
   numToBits(kBits, _buckets.size(), rhs);
 
-  lessThanOrEqual(maxsat_formula, pb, _output, kBits);
+  if (current_sign == _PB_LESS_OR_EQUAL_) {
+    lessThanOrEqual(maxsat_formula, pb, _output, kBits);
+  } else {
+    greaterThanOrEqual(maxsat_formula, pb, _output, kBits);
+  }
 }
 
 uint64_t VAdder::ld64(const uint64_t x) {
