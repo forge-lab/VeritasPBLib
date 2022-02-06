@@ -438,7 +438,11 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   std::sort(iliterals.begin(), iliterals.end(), lt_wlit);
   vec<int> geq;
   vec<int> leq;
-  encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
+  if (current_sign == _PB_LESS_OR_EQUAL_) {
+    encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
+  } else {
+    encodeLeq(rhs, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
+  }
 
   // begin proof log output
   if (current_sign == _PB_LESS_OR_EQUAL_) {
@@ -470,7 +474,7 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   } else {
     for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
          rit != pb_oliterals.rend(); rit++) {
-      if (rit->first > rhs) {
+      if (rit->first >= rhs) {
         addUnitClause(maxsat_formula, pb, rit->second);
       } else {
         break;
