@@ -271,6 +271,8 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
          left_it != loutputs.end(); left_it++) {
       addBinaryClause(maxsat_formula, pb, ~left_it->second,
                       get_var(maxsat_formula, oliterals, left_it->first));
+      // addBinaryClause(maxsat_formula, pb, left_it->second,
+      //                 ~get_var(maxsat_formula, oliterals, left_it->first));
     }
   }
 
@@ -281,6 +283,8 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
          right_it != routputs.end(); right_it++) {
       addBinaryClause(maxsat_formula, pb, ~right_it->second,
                       get_var(maxsat_formula, oliterals, right_it->first));
+      // addBinaryClause(maxsat_formula, pb, right_it->second,
+      //                 ~get_var(maxsat_formula, oliterals, right_it->first));
     }
   }
 
@@ -292,6 +296,8 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
       uint64_t tw = lit->first + rit->first;
       addTernaryClause(maxsat_formula, pb, ~lit->second, ~rit->second,
                        get_var(maxsat_formula, oliterals, tw));
+      // addTernaryClause(maxsat_formula, pb, lit->second, rit->second,
+      //                  ~get_var(maxsat_formula, oliterals, tw));
     }
   }
 
@@ -320,53 +326,62 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
   return true;
 }
 
-void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula) {
-  mx = maxsat_formula;
-
-  switch (pb->_sign) {
-  case _PB_EQUAL_:
-    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
-    break;
-  case _PB_LESS_OR_EQUAL_:
-    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
-    break;
-  case _PB_GREATER_OR_EQUAL_:
-    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    break;
-  default:
-    assert(false);
-  }
-}
-
 // copies the current PB constraint into new vectors
-void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
-  assert(sign != _PB_EQUAL_);
+void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign) {
+  assert(current_sign != _PB_EQUAL_);
+
   vec<Lit> lits;
+  uint64_t sum = 0;
   pb->_lits.copyTo(lits);
 
   vec<uint64_t> coeffs;
   for (int i = 0; i < pb->_coeffs.size(); i++) {
     assert(pb->_coeffs[i] > 0);
     coeffs.push(pb->_coeffs[i]);
+    sum += pb->_coeffs[i];
   }
   uint64_t rhs = pb->_rhs;
 
-  // transform it into <=
-  if (sign == _PB_GREATER_OR_EQUAL_) {
-    int s = 0;
-    for (int i = 0; i < coeffs.size(); i++) {
-      s += coeffs[i];
-      lits[i] = ~(lits[i]);
+  // simplifications
+  // all literals must be assigned to 0
+  if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, pb, ~lits[i]);
     }
-    rhs = s - rhs;
+    return;
+  }
+  // all literals must be assigned to 1
+  if (rhs == sum && current_sign == _PB_GREATER_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, pb, lits[i]);
+    }
+    return;
+  }
+  // constraint is no restriction
+  if (rhs == sum && current_sign == _PB_LESS_OR_EQUAL_) {
+    return;
+  }
+  if (rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
+    return;
   }
 
-  encode(maxsat_formula, pb, lits, coeffs, rhs);
+  // transform the constraint to consider the smallest rhs
+  if (sum - rhs < rhs) {
+    for (int i = 0; i < lits.size(); i++) {
+      lits[i] = ~(lits[i]);
+    }
+    rhs = sum - rhs;
+    if (current_sign == _PB_GREATER_OR_EQUAL_)
+      current_sign = _PB_LESS_OR_EQUAL_;
+    else
+      current_sign = _PB_GREATER_OR_EQUAL_;
+  }
+
+  encode(maxsat_formula, pb, lits, coeffs, rhs, current_sign);
 }
 
 void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-                  vec<uint64_t> &coeffs, uint64_t rhs) {
+                  vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign) {
   // FIXME: do not change coeffs in this method. Make coeffs const.
 
   // If the rhs is larger than INT32_MAX is not feasible to encode this
@@ -396,7 +411,8 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
       exit(_ERROR_);
     }
 
-    if (simp_coeffs[i] <= (unsigned)rhs) {
+    if (simp_coeffs[i] <= (unsigned)rhs ||
+        current_sign == _PB_GREATER_OR_EQUAL_) {
       lits.push(simp_lits[i]);
       coeffs.push(simp_coeffs[i]);
     } else
@@ -425,22 +441,59 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
 
   // begin proof log output
-  PBPp *pbp_output = new PBPp(mx->getIncProofLogId());
-  pbp_output->addition(pb->_id, geq[0]);
-  for (int i = 1; i < geq.size(); i++) {
-    pbp_output->addition(geq[i]);
+  if (current_sign == _PB_LESS_OR_EQUAL_) {
+    PBPp *pbp_output_leq = new PBPp(mx->getIncProofLogId());
+    pbp_output_leq->addition(pb->_id, geq[0]);
+    for (int i = 1; i < geq.size(); i++) {
+      pbp_output_leq->addition(geq[i]);
+    }
+    mx->addProofExpr(pb, pbp_output_leq);
+  } else {
+    PBPp *pbp_output_geq = new PBPp(mx->getIncProofLogId());
+    pbp_output_geq->addition(pb->_id, leq[0]);
+    for (int i = 1; i < leq.size(); i++) {
+      pbp_output_geq->addition(leq[i]);
+    }
+    mx->addProofExpr(pb, pbp_output_geq);
   }
-  mx->addProofExpr(pb, pbp_output);
   // end proof log output
 
-  for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
-       rit != pb_oliterals.rend(); rit++) {
-    if (rit->first > rhs) {
-      addUnitClause(maxsat_formula, pb, ~rit->second);
-    } else {
-      break;
+  if (current_sign == _PB_LESS_OR_EQUAL_) {
+    for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
+         rit != pb_oliterals.rend(); rit++) {
+      if (rit->first > rhs) {
+        addUnitClause(maxsat_formula, pb, ~rit->second);
+      } else {
+        break;
+      }
+    }
+  } else {
+    for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
+         rit != pb_oliterals.rend(); rit++) {
+      if (rit->first > rhs) {
+        addUnitClause(maxsat_formula, pb, rit->second);
+      } else {
+        break;
+      }
     }
   }
+}
 
-  current_pb_rhs = rhs;
+void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula) {
+  mx = maxsat_formula;
+
+  switch (pb->_sign) {
+  case _PB_EQUAL_:
+    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_LESS_OR_EQUAL_:
+    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_GREATER_OR_EQUAL_:
+    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    break;
+  default:
+    assert(false);
+  }
 }
