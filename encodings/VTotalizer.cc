@@ -36,19 +36,29 @@ void VTotalizer::adder(MaxSATFormula *maxsat_formula, Card *card,
   // We only need to count the sums up to k.
   for (int i = 0; i <= left.size(); i++) {
     for (int j = 0; j <= right.size(); j++) {
-      if (i == 0 && j == 0)
-        continue;
-
       if (i + j > _rhs + 1)
         continue;
 
-      if (i == 0) {
-        addBinaryClause(maxsat_formula, card, ~right[j - 1], output[j - 1]);
-      } else if (j == 0) {
-        addBinaryClause(maxsat_formula, card, ~left[i - 1], output[i - 1]);
-      } else {
-        addTernaryClause(maxsat_formula, card, ~left[i - 1], ~right[j - 1],
-                         output[i + j - 1]);
+      if (i > 0 || j > 0) {
+        if (i == 0) {
+          addBinaryClause(maxsat_formula, card, ~right[j - 1], output[j - 1]);
+        } else if (j == 0) {
+          addBinaryClause(maxsat_formula, card, ~left[i - 1], output[i - 1]);
+        } else {
+          addTernaryClause(maxsat_formula, card, ~left[i - 1], ~right[j - 1],
+                           output[i + j - 1]);
+        }
+      }
+
+      if (i < left.size() || j < right.size()) {
+        if (i >= left.size()) {
+          addBinaryClause(maxsat_formula, card, right[j], ~output[i + j]);
+        } else if (j >= right.size()) {
+          addBinaryClause(maxsat_formula, card, left[i], ~output[i + j]);
+        } else {
+          addTernaryClause(maxsat_formula, card, left[i], right[j],
+                           ~output[i + j]);
+        }
       }
     }
   }
@@ -167,7 +177,9 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   }
 
   uint64_t k = _rhs;
-  k++;
+  if (current_sign == _PB_LESS_OR_EQUAL_) {
+    k++;
+  }
 
   for (int i = 0; i < lits.size(); i++) {
     Lit p = mkLit(maxsat_formula->nVars(), false);

@@ -60,6 +60,7 @@ protected:
   Lit getNewLit(MaxSATFormula *maxsat_formula);
   Lit get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
               uint64_t weight);
+  uint64_t succ(wlit_mapt &literals, uint64_t weight);
 
   vec<Lit> pb_outlits; // Stores the outputs of the pseudo-Boolean constraint
                        // encoding for incremental solving.

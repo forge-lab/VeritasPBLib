@@ -218,6 +218,17 @@ Lit VGTE::get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
   return oliterals[weight];
 }
 
+uint64_t VGTE::succ(wlit_mapt &literals, uint64_t weight) {
+  uint64_t succ_weight = UINT64_MAX;
+  for (wlit_mapt::iterator it = literals.begin(); it != literals.end(); it++) {
+    if (it->first > weight && it->first < succ_weight) {
+      succ_weight = it->first;
+    }
+  }
+  assert(succ_weight != UINT64_MAX);
+  return succ_weight;
+}
+
 // recursive algorithm that actually encodes the PB constraint
 bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
                      const weightedlitst &iliterals, wlit_mapt &oliterals,
@@ -271,8 +282,6 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
          left_it != loutputs.end(); left_it++) {
       addBinaryClause(maxsat_formula, pb, ~left_it->second,
                       get_var(maxsat_formula, oliterals, left_it->first));
-      // addBinaryClause(maxsat_formula, pb, left_it->second,
-      //                 ~get_var(maxsat_formula, oliterals, left_it->first));
     }
   }
 
@@ -283,8 +292,6 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
          right_it != routputs.end(); right_it++) {
       addBinaryClause(maxsat_formula, pb, ~right_it->second,
                       get_var(maxsat_formula, oliterals, right_it->first));
-      // addBinaryClause(maxsat_formula, pb, right_it->second,
-      //                 ~get_var(maxsat_formula, oliterals, right_it->first));
     }
   }
 
@@ -296,9 +303,42 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
       uint64_t tw = lit->first + rit->first;
       addTernaryClause(maxsat_formula, pb, ~lit->second, ~rit->second,
                        get_var(maxsat_formula, oliterals, tw));
-      // addTernaryClause(maxsat_formula, pb, lit->second, rit->second,
-      //                  ~get_var(maxsat_formula, oliterals, tw));
     }
+  }
+
+  // clauses for geq constraints
+  weightedlitst left_list = sort_to_list(loutputs);
+  weightedlitst right_list = sort_to_list(routputs);
+  uint64_t left_max = left_list[left_list.size() - 1].weight;
+  uint64_t right_max = right_list[right_list.size() - 1].weight;
+
+  uint64_t prev_weight = 0;
+  for (uint i = 1; i < left_list.size(); i++) {
+    addBinaryClause(maxsat_formula, pb, left_list[i].lit,
+                    ~get_var(maxsat_formula, oliterals,
+                             succ(oliterals, prev_weight + right_max)));
+    prev_weight = left_list[i].weight;
+  }
+
+  prev_weight = 0;
+  for (uint j = 1; j < right_list.size(); j++) {
+    addBinaryClause(maxsat_formula, pb, right_list[j].lit,
+                    ~get_var(maxsat_formula, oliterals,
+                             succ(oliterals, prev_weight + left_max)));
+    prev_weight = right_list[j].weight;
+  }
+
+  uint64_t prev_left_weight = 0;
+  for (uint i = 1; i < left_list.size(); i++) {
+    uint64_t prev_right_weight = 0;
+    for (uint j = 1; j < right_list.size(); j++) {
+      uint64_t tw = prev_left_weight + prev_right_weight;
+      addTernaryClause(
+          maxsat_formula, pb, left_list[i].lit, right_list[j].lit,
+          ~get_var(maxsat_formula, oliterals, succ(oliterals, tw)));
+      prev_right_weight = right_list[j].weight;
+    }
+    prev_left_weight = left_list[i].weight;
   }
 
   std::pair<int, int> res_pair = derive_sparse_unary_sum(
