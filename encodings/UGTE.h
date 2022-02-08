@@ -66,15 +66,16 @@ public:
   void encode(PB *pb, MaxSATFormula *maxsat_formula);
 
 protected:
-  void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign);
+  void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign);
   void encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-              vec<uint64_t> &coeffs, uint64_t rhs);
+              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign);
 
   bool encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
                  const weightedlitst &iliterals, wlit_mapt &oliterals);
   Lit getNewLit(MaxSATFormula *maxsat_formula);
   Lit get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
               uint64_t weight);
+  uint64_t succ(wlit_mapt &literals, uint64_t weight);
 
   vec<Lit> pb_outlits; // Stores the outputs of the pseudo-Boolean constraint
                        // encoding for incremental solving.
@@ -85,6 +86,8 @@ protected:
   wlit_mapt pb_oliterals;
   vec<Lit> unit_lits;
   vec<uint64_t> unit_coeffs;
+
+  weightedlitst sort_to_list(wlit_mapt &map);
 };
 
 } // namespace openwbo

@@ -472,10 +472,10 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   std::sort(iliterals.begin(), iliterals.end(), lt_wlit);
   vec<int> geq;
   vec<int> leq;
-  if (current_sign == _PB_LESS_OR_EQUAL_) {
-    encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
-  } else {
+  if (current_sign == _PB_GREATER_OR_EQUAL_) {
     encodeLeq(rhs, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
+  } else {
+    encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
   }
 
   // begin proof log output
@@ -505,20 +505,20 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   }
   // end proof log output
 
-  if (current_sign == _PB_LESS_OR_EQUAL_) {
-    for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
-         rit != pb_oliterals.rend(); rit++) {
-      if (rit->first > rhs) {
-        addUnitClause(maxsat_formula, pb, ~rit->second);
+  weightedlitst out_list = sort_to_list(pb_oliterals);
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    for (uint i = 0; i < out_list.size(); i++) {
+      if (out_list[i].weight > rhs) {
+        addUnitClause(maxsat_formula, pb, ~out_list[i].lit);
       } else {
         break;
       }
     }
-  } else {
-    for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
-         rit != pb_oliterals.rend(); rit++) {
-      if (rit->first >= rhs) {
-        addUnitClause(maxsat_formula, pb, rit->second);
+  }
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    for (uint i = 0; i < out_list.size(); i++) {
+      if (out_list[i].weight >= rhs) {
+        addUnitClause(maxsat_formula, pb, out_list[i].lit);
       } else {
         break;
       }

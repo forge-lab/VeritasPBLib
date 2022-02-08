@@ -36,33 +36,43 @@ void UTotalizer::adder(MaxSATFormula *maxsat_formula, Card *card,
   // We only need to count the sums up to k.
   for (int i = 0; i <= left.size(); i++) {
     for (int j = 0; j <= right.size(); j++) {
-      if (i == 0 && j == 0)
-        continue;
-
       if (i + j > _rhs + 1)
         continue;
 
-      if (i == 0) {
-        addBinaryClause(maxsat_formula, card, ~right[j - 1], output[j - 1]);
-      } else if (j == 0) {
-        addBinaryClause(maxsat_formula, card, ~left[i - 1], output[i - 1]);
-      } else {
-        addTernaryClause(maxsat_formula, card, ~left[i - 1], ~right[j - 1],
-                         output[i + j - 1]);
+      if (i > 0 || j > 0) {
+        if (i == 0) {
+          addBinaryClause(maxsat_formula, card, ~right[j - 1], output[j - 1]);
+        } else if (j == 0) {
+          addBinaryClause(maxsat_formula, card, ~left[i - 1], output[i - 1]);
+        } else {
+          addTernaryClause(maxsat_formula, card, ~left[i - 1], ~right[j - 1],
+                           output[i + j - 1]);
+        }
+      }
+
+      if (i < left.size() || j < right.size()) {
+        if (i >= left.size()) {
+          addBinaryClause(maxsat_formula, card, right[j], ~output[i + j]);
+        } else if (j >= right.size()) {
+          addBinaryClause(maxsat_formula, card, left[i], ~output[i + j]);
+        } else {
+          addTernaryClause(maxsat_formula, card, left[i], right[j],
+                           ~output[i + j]);
+        }
       }
     }
   }
 }
 
 void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, Card *card,
-                       vec<Lit> &lits, int64_t k) {
+                       vec<Lit> &lits_out, int64_t k) {
   vec<Lit> left;
   vec<Lit> right;
 
-  assert(lits.size() > 1);
-  int split = floor(lits.size() / 2);
+  assert(lits_out.size() > 1);
+  int split = floor(lits_out.size() / 2);
 
-  for (int i = 0; i < lits.size(); i++) {
+  for (int i = 0; i < lits_out.size(); i++) {
     if (i < split) {
       // left branch
       if (split == 1) {
@@ -76,7 +86,7 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, Card *card,
       }
     } else {
       // right branch
-      if (lits.size() - split == 1) {
+      if (lits_out.size() - split == 1) {
         assert(cardinality_inlits.size() > 0);
         right.push(cardinality_inlits.last());
         cardinality_inlits.pop();
@@ -92,17 +102,15 @@ void UTotalizer::toCNF(MaxSATFormula *maxsat_formula, Card *card,
     toCNF(maxsat_formula, card, left, k);
   if (right.size() > 1)
     toCNF(maxsat_formula, card, right, k);
-  lits.shrink(lits.size() - (left.size() + right.size()));
-  adder(maxsat_formula, card, left, right, lits);
+  lits_out.shrink(lits_out.size() - (left.size() + right.size()));
+  adder(maxsat_formula, card, left, right, lits_out);
 
   // k-simplification
-  lits.shrink(lits.size() - k);
+  lits_out.shrink(lits_out.size() - k);
 }
 
 void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
                         pb_Sign sign) {
-  assert(sign != _PB_EQUAL_);
-
   vec<Lit> lits;
   vec<Lit> pb_outlits;
   vec<int64_t> coeffs;
@@ -148,14 +156,18 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
       lits[i] = ~(lits[i]);
     }
     _rhs = s - _rhs;
-    if (current_sign == _PB_GREATER_OR_EQUAL_)
-      current_sign = _PB_LESS_OR_EQUAL_;
-    else
-      current_sign = _PB_GREATER_OR_EQUAL_;
+    if (current_sign != _PB_EQUAL_) {
+      if (current_sign == _PB_GREATER_OR_EQUAL_)
+        current_sign = _PB_LESS_OR_EQUAL_;
+      else
+        current_sign = _PB_GREATER_OR_EQUAL_;
+    }
   }
 
   uint64_t k = _rhs;
-  k++;
+  if (current_sign != _PB_GREATER_OR_EQUAL_) {
+    k++;
+  }
 
   for (int i = 0; i < lits.size(); i++) {
     Lit p = mkLit(maxsat_formula->nVars(), false);
@@ -168,9 +180,10 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   toCNF(maxsat_formula, card, cardinality_outlits, k);
   assert(cardinality_inlits.size() == 0);
 
-  if (current_sign == _PB_GREATER_OR_EQUAL_) {
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     addUnitClause(maxsat_formula, card, cardinality_outlits[_rhs - 1]);
-  } else {
+  }
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     addUnitClause(maxsat_formula, card, ~cardinality_outlits[_rhs]);
   }
 }
@@ -179,8 +192,7 @@ void UTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula) {
 
   switch (card->_sign) {
   case _PB_EQUAL_:
-    encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    encode(card, maxsat_formula, _PB_EQUAL_);
     break;
   case _PB_LESS_OR_EQUAL_:
     encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);

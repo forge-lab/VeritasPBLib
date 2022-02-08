@@ -38,15 +38,13 @@ namespace openwbo {
 class USequential : public Encodings {
 
 public:
-  USequential() {
-  }
+  USequential() {}
   ~USequential() {}
 
   void encode(Card *card, MaxSATFormula *maxsat_formula);
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
-
 };
 } // namespace openwbo
 

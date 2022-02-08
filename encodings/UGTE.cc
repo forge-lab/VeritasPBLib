@@ -30,6 +30,7 @@
 #include "UGTE.h"
 #include <algorithm>
 #include <numeric>
+
 using namespace openwbo;
 
 struct less_than_wlitt {
@@ -38,6 +39,22 @@ struct less_than_wlitt {
   }
 };
 
+weightedlitst UGTE::sort_to_list(wlit_mapt &map) {
+  weightedlitst list;
+  wlitt wl;
+  wl.weight = 0;
+  wl.lit = map.end()->second;
+  list.push_back(wl);
+  for (wlit_mapt::iterator it = map.begin(); it != map.end(); it++) {
+    wlitt wl;
+    wl.lit = it->second;
+    wl.weight = it->first;
+    list.push_back(wl);
+  }
+  less_than_wlitt lt_wlit;
+  std::sort(list.begin(), list.end(), lt_wlit);
+  return list;
+}
 // create new literal
 Lit UGTE::getNewLit(MaxSATFormula *maxsat_formula) {
   Lit p = mkLit(maxsat_formula->nVars(), false);
@@ -55,6 +72,17 @@ Lit UGTE::get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
     oliterals[weight] = v;
   }
   return oliterals[weight];
+}
+
+uint64_t UGTE::succ(wlit_mapt &literals, uint64_t weight) {
+  uint64_t succ_weight = UINT64_MAX;
+  for (wlit_mapt::iterator it = literals.begin(); it != literals.end(); it++) {
+    if (it->first > weight && it->first < succ_weight) {
+      succ_weight = it->first;
+    }
+  }
+  assert(succ_weight != UINT64_MAX);
+  return succ_weight;
 }
 
 // recursive algorithm that actually encodes the PB constraint
@@ -132,6 +160,41 @@ bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
     }
   }
 
+  // clauses for geq constraints
+  weightedlitst left_list = sort_to_list(loutputs);
+  weightedlitst right_list = sort_to_list(routputs);
+  uint64_t left_max = left_list[left_list.size() - 1].weight;
+  uint64_t right_max = right_list[right_list.size() - 1].weight;
+
+  uint64_t prev_weight = 0;
+  for (uint i = 1; i < left_list.size(); i++) {
+    addBinaryClause(maxsat_formula, pb, left_list[i].lit,
+                    ~get_var(maxsat_formula, oliterals,
+                             succ(oliterals, prev_weight + right_max)));
+    prev_weight = left_list[i].weight;
+  }
+
+  prev_weight = 0;
+  for (uint j = 1; j < right_list.size(); j++) {
+    addBinaryClause(maxsat_formula, pb, right_list[j].lit,
+                    ~get_var(maxsat_formula, oliterals,
+                             succ(oliterals, prev_weight + left_max)));
+    prev_weight = right_list[j].weight;
+  }
+
+  uint64_t prev_left_weight = 0;
+  for (uint i = 1; i < left_list.size(); i++) {
+    uint64_t prev_right_weight = 0;
+    for (uint j = 1; j < right_list.size(); j++) {
+      uint64_t tw = prev_left_weight + prev_right_weight;
+      addTernaryClause(
+          maxsat_formula, pb, left_list[i].lit, right_list[j].lit,
+          ~get_var(maxsat_formula, oliterals, succ(oliterals, tw)));
+      prev_right_weight = right_list[j].weight;
+    }
+    prev_left_weight = left_list[i].weight;
+  }
+
   // k-simplification
   uint64_t max_lit_weight = UINT64_MAX;
   vec<uint64_t> weights_to_remove;
@@ -152,57 +215,62 @@ bool UGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
   return true;
 }
 
-void UGTE::encode(PB *pb, MaxSATFormula *maxsat_formula) {
-  mx = maxsat_formula;
-
-  switch (pb->_sign) {
-  case _PB_EQUAL_:
-    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
-    break;
-  case _PB_LESS_OR_EQUAL_:
-    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
-    break;
-  case _PB_GREATER_OR_EQUAL_:
-    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    break;
-  default:
-    assert(false);
-  }
-}
-
 // copies the current PB constraint into new vectors
-void UGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign sign) {
-  assert(sign != _PB_EQUAL_);
+void UGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign) {
   vec<Lit> lits;
+  uint64_t sum = 0;
   pb->_lits.copyTo(lits);
 
   vec<uint64_t> coeffs;
   for (int i = 0; i < pb->_coeffs.size(); i++) {
     assert(pb->_coeffs[i] > 0);
     coeffs.push(pb->_coeffs[i]);
+    sum += pb->_coeffs[i];
   }
   uint64_t rhs = pb->_rhs;
 
-  // transform it into <=
-  if (sign == _PB_GREATER_OR_EQUAL_) {
-    int s = 0;
-    for (int i = 0; i < coeffs.size(); i++) {
-      s += coeffs[i];
-      lits[i] = ~(lits[i]);
+  // simplifications
+  // all literals must be assigned to 0
+  if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, pb, ~lits[i]);
     }
-    rhs = s - rhs;
+    return;
+  }
+  // all literals must be assigned to 1
+  if (rhs == sum && current_sign == _PB_GREATER_OR_EQUAL_) {
+    for (int i = 0; i < lits.size(); i++) {
+      addUnitClause(maxsat_formula, pb, lits[i]);
+    }
+    return;
+  }
+  // constraint is no restriction
+  if (rhs == sum && current_sign == _PB_LESS_OR_EQUAL_) {
+    return;
+  }
+  if (rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
+    return;
   }
 
-  encode(maxsat_formula, pb, lits, coeffs, rhs);
+  // transform the constraint to consider the smallest rhs
+  if (sum - rhs < rhs) {
+    for (int i = 0; i < lits.size(); i++) {
+      lits[i] = ~(lits[i]);
+    }
+    rhs = sum - rhs;
+    if (current_sign != _PB_EQUAL_) {
+      if (current_sign == _PB_GREATER_OR_EQUAL_)
+        current_sign = _PB_LESS_OR_EQUAL_;
+      else
+        current_sign = _PB_GREATER_OR_EQUAL_;
+    }
+  }
+
+  encode(maxsat_formula, pb, lits, coeffs, rhs, current_sign);
 }
 
 void UGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-                  vec<uint64_t> &coeffs, uint64_t rhs) {
-  // FIXME: do not change coeffs in this method. Make coeffs const.
-
-  // If the rhs is larger than INT32_MAX is not feasible to encode this
-  // pseudo-Boolean constraint to CNF.
+                  vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign) {
   if (rhs >= UINT64_MAX) {
     printf("c Overflow in the Encoding\n");
     printf("s UNKNOWN\n");
@@ -228,16 +296,12 @@ void UGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
       exit(_ERROR_);
     }
 
-    if (simp_coeffs[i] <= (unsigned)rhs) {
+    if (simp_coeffs[i] > (unsigned)rhs && current_sign == _PB_LESS_OR_EQUAL_) {
+      addUnitClause(maxsat_formula, pb, ~simp_lits[i]);
+    } else {
       lits.push(simp_lits[i]);
       coeffs.push(simp_coeffs[i]);
-    } else
-      addUnitClause(maxsat_formula, pb, ~simp_lits[i]);
-  }
-
-  if (lits.size() == 1) {
-    // addUnitClause(S, ~lits[0]);
-    return;
+    }
   }
 
   if (lits.size() == 0)
@@ -252,16 +316,47 @@ void UGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   }
   less_than_wlitt lt_wlit;
   std::sort(iliterals.begin(), iliterals.end(), lt_wlit);
-  encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals);
-
-  for (wlit_mapt::reverse_iterator rit = pb_oliterals.rbegin();
-       rit != pb_oliterals.rend(); rit++) {
-    if (rit->first > rhs) {
-      addUnitClause(maxsat_formula, pb, ~rit->second);
-    } else {
-      break;
-    }
+  if (current_sign == _PB_GREATER_OR_EQUAL_) {
+    encodeLeq(rhs, maxsat_formula, pb, iliterals, pb_oliterals);
+  } else {
+    encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals);
   }
 
-  current_pb_rhs = rhs;
+  weightedlitst out_list = sort_to_list(pb_oliterals);
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    for (uint i = 0; i < out_list.size(); i++) {
+      if (out_list[i].weight > rhs) {
+        addUnitClause(maxsat_formula, pb, ~out_list[i].lit);
+      } else {
+        break;
+      }
+    }
+  }
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    for (uint i = 0; i < out_list.size(); i++) {
+      if (out_list[i].weight >= rhs) {
+        addUnitClause(maxsat_formula, pb, out_list[i].lit);
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+void UGTE::encode(PB *pb, MaxSATFormula *maxsat_formula) {
+  mx = maxsat_formula;
+
+  switch (pb->_sign) {
+  case _PB_EQUAL_:
+    encode(pb, maxsat_formula, _PB_EQUAL_);
+    break;
+  case _PB_LESS_OR_EQUAL_:
+    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_GREATER_OR_EQUAL_:
+    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    break;
+  default:
+    assert(false);
+  }
 }
