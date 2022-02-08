@@ -36,3 +36,7 @@ VeritasPBLib
 # Output files
 *.cnf
 *.pbp
+
+# Test files
+tests/generated/*
+tests/__pycache__/*
