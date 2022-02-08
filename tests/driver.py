@@ -2,7 +2,7 @@ from settings import vertiaspblib, roundingsat
 import subprocess
 from enum import Enum
 
-from pbcas.ast import Variable, Integer
+from pbcas.ast import Variable, Integer, normalize_by_reduce, Mult, Add
 from pbcas.opb_formula import OPBFormula
 from pbcas.cnf_formula import CNFFormula
 from veripb import run as veripb_verify
@@ -94,17 +94,25 @@ class Driver:
         return run_roundingsat(self.opt_min)
 
     def maximize(self, objective):
-        flippedObj = 0
+        if not getattr(objective, "isNormalized", False):
+            objective = normalize_by_reduce(objective)[0]
+
+        print(objective)
+
+        terms = []
         for term in objective:
             coeff, var = term
-            flippedObj += -coeff * var
+            terms.append(Mult([-1 * coeff, var]))
+        flippedObj = Add(terms)
+        flippedObj.isNormalized = True
 
         opb = OPBFormula(self.cnf.getConstraints(), objective = flippedObj)
 
         with open(self.opt_max, "w") as file:
             opb.write(file)
 
-        return run_roundingsat(self.opt_max)
+        result, val = run_roundingsat(self.opt_max)
+        return (result, -val if val is not None else None)
 
 def main():
     formula = OPBFormula()
