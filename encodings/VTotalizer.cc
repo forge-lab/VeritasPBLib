@@ -123,8 +123,6 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, Card *card,
 
 void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
                         pb_Sign sign) {
-  assert(sign != _PB_EQUAL_);
-
   vec<Lit> lits;
   vec<Lit> pb_outlits;
   vec<int64_t> coeffs;
@@ -163,6 +161,7 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   }
 
   // transform the constraint to consider the smallest rhs
+  bool flipped = false;
   if (n - _rhs < _rhs) {
     int s = 0;
     for (int i = 0; i < lits.size(); i++) {
@@ -170,14 +169,17 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
       lits[i] = ~(lits[i]);
     }
     _rhs = s - _rhs;
-    if (current_sign == _PB_GREATER_OR_EQUAL_)
-      current_sign = _PB_LESS_OR_EQUAL_;
-    else
-      current_sign = _PB_GREATER_OR_EQUAL_;
+    if (current_sign != _PB_EQUAL_) {
+      if (current_sign == _PB_GREATER_OR_EQUAL_)
+        current_sign = _PB_LESS_OR_EQUAL_;
+      else
+        current_sign = _PB_GREATER_OR_EQUAL_;
+    }
+    flipped = true;
   }
 
   uint64_t k = _rhs;
-  if (current_sign == _PB_LESS_OR_EQUAL_) {
+  if (current_sign != _PB_GREATER_OR_EQUAL_) {
     k++;
   }
 
@@ -194,24 +196,33 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   toCNF(maxsat_formula, card, cardinality_outlits, k, geq, leq);
   assert(cardinality_inlits.size() == 0);
 
-  if (current_sign == _PB_GREATER_OR_EQUAL_) {
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     addUnitClause(maxsat_formula, card, cardinality_outlits[_rhs - 1]);
-  } else {
+  }
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     addUnitClause(maxsat_formula, card, ~cardinality_outlits[_rhs]);
   }
 
   // proof log fixing output
-  if (current_sign == _PB_GREATER_OR_EQUAL_) {
-
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    pbp->addition(card->_id, leq[0]);
+    if (current_sign == _PB_EQUAL_ && flipped) {
+      pbp->addition(card->_id + 1, leq[0]);
+    } else {
+      pbp->addition(card->_id, leq[0]);
+    }
     for (int i = 1; i < leq.size(); i++) {
       pbp->addition(leq[i]);
     }
     mx->addProofExpr(card, pbp);
-  } else {
+  }
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    pbp->addition(card->_id, geq[0]);
+    if (current_sign == _PB_EQUAL_ && !flipped) {
+      pbp->addition(card->_id + 1, geq[0]);
+    } else {
+      pbp->addition(card->_id, geq[0]);
+    }
     for (int i = 1; i < geq.size(); i++) {
       pbp->addition(geq[i]);
     }
@@ -224,8 +235,7 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula) {
 
   switch (card->_sign) {
   case _PB_EQUAL_:
-    encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    encode(card, maxsat_formula, _PB_EQUAL_);
     break;
   case _PB_LESS_OR_EQUAL_:
     encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);

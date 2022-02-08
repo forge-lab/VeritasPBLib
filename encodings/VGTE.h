@@ -52,7 +52,8 @@ public:
 protected:
   void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign);
   void encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign);
+              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign,
+              bool flipped);
 
   bool encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
                  const weightedlitst &iliterals, wlit_mapt &oliterals,

@@ -52,11 +52,8 @@ protected:
   vec<Lit> clause;
   std::vector<std::queue<Lit>> _buckets;
 
-  void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign);
-
   // Encode constraint.
-  void encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-              vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign);
+  void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign);
 
   void FA_extra(MaxSATFormula *maxsat_formula, PB *pb, Lit xc, Lit xs, Lit a,
                 Lit b, Lit c);
@@ -66,7 +63,7 @@ protected:
   Lit HA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b);
   void adderTree(MaxSATFormula *maxsat_formula, PB *pb,
                  std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
-                 uint64_t log_k);
+                 uint64_t log_k, pb_Sign current_sign, bool flipped);
   void lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &xs,
                        std::vector<uint64_t> &ys);
   void greaterThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &xs,

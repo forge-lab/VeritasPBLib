@@ -199,6 +199,10 @@ void MaxSATFormula::addPBConstraint(PB *p) {
     // TODO: test PB constraints
     pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign, id));
   }
+  if (p->_sign == _PB_EQUAL_) {
+    id++;
+    proof_log_id++;
+  }
 }
 
 int MaxSATFormula::newVarName(char *varName) {

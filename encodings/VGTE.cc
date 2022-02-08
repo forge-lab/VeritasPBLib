@@ -368,8 +368,6 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
 
 // copies the current PB constraint into new vectors
 void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign) {
-  assert(current_sign != _PB_EQUAL_);
-
   vec<Lit> lits;
   uint64_t sum = 0;
   pb->_lits.copyTo(lits);
@@ -406,26 +404,27 @@ void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign) {
   }
 
   // transform the constraint to consider the smallest rhs
+  bool flipped = false;
   if (sum - rhs < rhs) {
     for (int i = 0; i < lits.size(); i++) {
       lits[i] = ~(lits[i]);
     }
     rhs = sum - rhs;
-    if (current_sign == _PB_GREATER_OR_EQUAL_)
-      current_sign = _PB_LESS_OR_EQUAL_;
-    else
-      current_sign = _PB_GREATER_OR_EQUAL_;
+    if (current_sign != _PB_EQUAL_) {
+      if (current_sign == _PB_GREATER_OR_EQUAL_)
+        current_sign = _PB_LESS_OR_EQUAL_;
+      else
+        current_sign = _PB_GREATER_OR_EQUAL_;
+    }
+    flipped = true;
   }
 
-  encode(maxsat_formula, pb, lits, coeffs, rhs, current_sign);
+  encode(maxsat_formula, pb, lits, coeffs, rhs, current_sign, flipped);
 }
 
 void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-                  vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign) {
-  // FIXME: do not change coeffs in this method. Make coeffs const.
-
-  // If the rhs is larger than INT32_MAX is not feasible to encode this
-  // pseudo-Boolean constraint to CNF.
+                  vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign,
+                  bool flipped) {
   if (rhs >= UINT64_MAX) {
     printf("c Overflow in the Encoding\n");
     printf("s UNKNOWN\n");
@@ -451,17 +450,12 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
       exit(_ERROR_);
     }
 
-    if (simp_coeffs[i] <= (unsigned)rhs ||
-        current_sign == _PB_GREATER_OR_EQUAL_) {
+    if (simp_coeffs[i] > (unsigned)rhs && current_sign == _PB_LESS_OR_EQUAL_) {
+      addUnitClause(maxsat_formula, pb, ~simp_lits[i]);
+    } else {
       lits.push(simp_lits[i]);
       coeffs.push(simp_coeffs[i]);
-    } else
-      addUnitClause(maxsat_formula, pb, ~simp_lits[i]);
-  }
-
-  if (lits.size() == 1) {
-    // addUnitClause(S, ~lits[0]);
-    return;
+    }
   }
 
   if (lits.size() == 0)
@@ -485,16 +479,25 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   }
 
   // begin proof log output
-  if (current_sign == _PB_LESS_OR_EQUAL_) {
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     PBPp *pbp_output_leq = new PBPp(mx->getIncProofLogId());
-    pbp_output_leq->addition(pb->_id, geq[0]);
+    if (current_sign == _PB_EQUAL_ && !flipped) {
+      pbp_output_leq->addition(pb->_id + 1, geq[0]);
+    } else {
+      pbp_output_leq->addition(pb->_id, geq[0]);
+    }
     for (int i = 1; i < geq.size(); i++) {
       pbp_output_leq->addition(geq[i]);
     }
     mx->addProofExpr(pb, pbp_output_leq);
-  } else {
+  }
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     PBPp *pbp_output_geq = new PBPp(mx->getIncProofLogId());
-    pbp_output_geq->addition(pb->_id, leq[0]);
+    if (current_sign == _PB_EQUAL_ && flipped) {
+      pbp_output_geq->addition(pb->_id + 1, leq[0]);
+    } else {
+      pbp_output_geq->addition(pb->_id, leq[0]);
+    }
     for (int i = 1; i < leq.size(); i++) {
       pbp_output_geq->addition(leq[i]);
     }
@@ -528,8 +531,7 @@ void VGTE::encode(PB *pb, MaxSATFormula *maxsat_formula) {
 
   switch (pb->_sign) {
   case _PB_EQUAL_:
-    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    encode(pb, maxsat_formula, _PB_EQUAL_);
     break;
   case _PB_LESS_OR_EQUAL_:
     encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);

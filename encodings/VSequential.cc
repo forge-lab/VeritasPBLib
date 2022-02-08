@@ -31,8 +31,6 @@ using namespace openwbo;
 
 void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
                          pb_Sign sign) {
-  assert(sign != _PB_EQUAL_);
-
   vec<Lit> lits;
   uint64_t rhs = card->_rhs;
   card->_lits.copyTo(lits);
@@ -67,6 +65,7 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
   }
 
   // transform the constraint to consider the smallest rhs
+  bool flipped = false;
   if (n - rhs < rhs) {
     int s = 0;
     for (int i = 0; i < lits.size(); i++) {
@@ -74,10 +73,13 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
       lits[i] = ~(lits[i]);
     }
     rhs = s - rhs;
-    if (current_sign == _PB_GREATER_OR_EQUAL_)
-      current_sign = _PB_LESS_OR_EQUAL_;
-    else
-      current_sign = _PB_GREATER_OR_EQUAL_;
+    if (current_sign != _PB_EQUAL_) {
+      if (current_sign == _PB_GREATER_OR_EQUAL_)
+        current_sign = _PB_LESS_OR_EQUAL_;
+      else
+        current_sign = _PB_GREATER_OR_EQUAL_;
+    }
+    flipped = true;
   }
 
   uint64_t k = rhs;
@@ -90,10 +92,10 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
   // Create auxiliary variables.
   vec<Lit> *seq_auxiliary = new vec<Lit>[n];
   for (int i = 0; i < n; i++) {
-    if (i + 1 < k)
+    if (i + 1 <= k)
       seq_auxiliary[i].growTo(i + 1);
     else
-      seq_auxiliary[i].growTo(k);
+      seq_auxiliary[i].growTo(k + 1);
     for (int j = 0; j < seq_auxiliary[i].size(); j++) {
       seq_auxiliary[i][j] = mkLit(maxsat_formula->nVars(), false);
       maxsat_formula->newVar();
@@ -106,8 +108,8 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   for (int i = 1; i <= n; i++) {
     int m = i;
-    if (k < m)
-      m = k;
+    if ((k + 1) < m)
+      m = k + 1;
     // derive_unary_sum(l_i + sum^m_{i-1},j=1 s_{i-1},j = sum^m_i,j=1 s_i,j)
     vec<Lit> left;
     vec<Lit> right;
@@ -124,19 +126,26 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
     leq.push(res.second);
   }
 
-  if (current_sign == _PB_GREATER_OR_EQUAL_) {
-
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    pbp->addition(card->_id, leq[0]);
+    if (current_sign == _PB_EQUAL_ && flipped) {
+      pbp->addition(card->_id + 1, leq[0]);
+    } else {
+      pbp->addition(card->_id, leq[0]);
+    }
     for (int i = 1; i < leq.size(); i++) {
       pbp->addition(leq[i]);
     }
     mx->addProofExpr(card, pbp);
   }
 
-  if (current_sign == _PB_LESS_OR_EQUAL_) {
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    pbp->addition(card->_id, geq[0]);
+    if (current_sign == _PB_EQUAL_ && !flipped) {
+      pbp->addition(card->_id + 1, geq[0]);
+    } else {
+      pbp->addition(card->_id, leq[0]);
+    }
     for (int i = 1; i < geq.size(); i++) {
       pbp->addition(geq[i]);
     }
@@ -155,11 +164,9 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
 
     if (i + 1 == seq_auxiliary[i].size()) {
       addBinaryClause(maxsat_formula, card, lits[i], ~seq_auxiliary[i][i]);
-      addBinaryClause(maxsat_formula, card, seq_auxiliary[i - 1][i - 1],
-                      ~seq_auxiliary[i][i]);
     }
 
-    for (int j = 0; j < k; j++) {
+    for (int j = 0; j <= k; j++) {
       if (j < seq_auxiliary[i - 1].size())
         addTernaryClause(maxsat_formula, card, lits[i], seq_auxiliary[i - 1][j],
                          ~seq_auxiliary[i][j]);
@@ -168,22 +175,23 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
         addBinaryClause(maxsat_formula, card, ~seq_auxiliary[i - 1][j],
                         seq_auxiliary[i][j]);
 
-      if (j + 1 < k && j < seq_auxiliary[i - 1].size())
+      if (j > 0 && j < seq_auxiliary[i].size())
         addTernaryClause(maxsat_formula, card, ~lits[i],
-                         ~seq_auxiliary[i - 1][j], seq_auxiliary[i][j + 1]);
+                         ~seq_auxiliary[i - 1][j - 1], seq_auxiliary[i][j]);
 
-      if (i > 1 && j + 1 < k && j < seq_auxiliary[i - 1].size() &&
-          j + 1 < seq_auxiliary[i - 1].size()) {
-        addTernaryClause(maxsat_formula, card, seq_auxiliary[i - 1][j],
-                         seq_auxiliary[i - 1][j + 1], ~seq_auxiliary[i][j + 1]);
+      if (j > 0 && j < seq_auxiliary[i].size()) {
+        addBinaryClause(maxsat_formula, card, seq_auxiliary[i - 1][j - 1],
+                        ~seq_auxiliary[i][j]);
       }
     }
   }
 
-  if (current_sign == _PB_GREATER_OR_EQUAL_)
-    addUnitClause(maxsat_formula, card, seq_auxiliary[n - 1][k - 1]);
-  else
-    addUnitClause(maxsat_formula, card, ~seq_auxiliary[n - 1][k - 1]);
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    addUnitClause(maxsat_formula, card, seq_auxiliary[n - 1][rhs - 1]);
+  }
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    addUnitClause(maxsat_formula, card, ~seq_auxiliary[n - 1][rhs]);
+  }
 }
 
 void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula) {
@@ -191,8 +199,7 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula) {
 
   switch (card->_sign) {
   case _PB_EQUAL_:
-    encode(card, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    encode(card, maxsat_formula, _PB_EQUAL_);
     break;
   case _PB_LESS_OR_EQUAL_:
     encode(card, maxsat_formula, _PB_LESS_OR_EQUAL_);

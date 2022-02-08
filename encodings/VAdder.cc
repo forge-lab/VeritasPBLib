@@ -104,11 +104,25 @@ Lit VAdder::HA_sum(MaxSATFormula *maxsat_formula, PB *pb, Lit a, Lit b) {
 
 void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
                        std::vector<std::queue<Lit>> &buckets, vec<Lit> &result,
-                       uint64_t log_k) {
+                       uint64_t log_k, pb_Sign current_sign, bool flipped) {
   Lit x, y, z;
   Lit u = lit_Undef;
-  int current_constr_id_geq = pb->_id;
-  int current_constr_id_leq = pb->_id;
+  int current_constr_id_geq = 0;
+  int current_constr_id_leq = 0;
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    if (current_sign == _PB_EQUAL_ && !flipped) {
+      current_constr_id_geq = pb->_id + 1;
+    } else {
+      current_constr_id_geq = pb->_id;
+    }
+  }
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    if (current_sign == _PB_EQUAL_ && flipped) {
+      current_constr_id_leq = pb->_id + 1;
+    } else {
+      current_constr_id_leq = pb->_id;
+    }
+  }
 
   for (size_t i = 0; /*i < log_k &&*/ i < buckets.size(); i++) {
     if (buckets[i].size() == 0)
@@ -155,27 +169,31 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
       pair_sum = reify(pb, x_sum, pb_sum);
 
-      PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
-      pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
-      pbp_geq->addition(pair_sum.first->_ctrid);
-      pbp_geq->division(3);
-      mx->addProofExpr(pb, pbp_geq);
-      PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
-      pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
-      pbp_geq_sum->addition(current_constr_id_geq);
-      mx->addProofExpr(pb, pbp_geq_sum);
-      current_constr_id_geq = pbp_geq_sum->_ctrid;
+      if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+        PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
+        pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
+        pbp_geq->addition(pair_sum.first->_ctrid);
+        pbp_geq->division(3);
+        mx->addProofExpr(pb, pbp_geq);
+        PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
+        pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
+        pbp_geq_sum->addition(current_constr_id_geq);
+        mx->addProofExpr(pb, pbp_geq_sum);
+        current_constr_id_geq = pbp_geq_sum->_ctrid;
+      }
 
-      PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
-      pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
-      pbp_leq->addition(pair_sum.second->_ctrid);
-      pbp_leq->division(3);
-      mx->addProofExpr(pb, pbp_leq);
-      PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
-      pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
-      pbp_leq_sum->addition(current_constr_id_leq);
-      mx->addProofExpr(pb, pbp_leq_sum);
-      current_constr_id_leq = pbp_leq_sum->_ctrid;
+      if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+        PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
+        pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
+        pbp_leq->addition(pair_sum.second->_ctrid);
+        pbp_leq->division(3);
+        mx->addProofExpr(pb, pbp_leq);
+        PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
+        pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
+        pbp_leq_sum->addition(current_constr_id_leq);
+        mx->addProofExpr(pb, pbp_leq_sum);
+        current_constr_id_leq = pbp_leq_sum->_ctrid;
+      }
     }
 
     if (buckets[i].size() == 2) {
@@ -206,27 +224,31 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
       PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
       pair_sum = reify(pb, x_sum, pb_sum);
 
-      PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
-      pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
-      pbp_geq->addition(pair_sum.first->_ctrid);
-      pbp_geq->division(3);
-      mx->addProofExpr(pb, pbp_geq);
-      PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
-      pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
-      pbp_geq_sum->addition(current_constr_id_geq);
-      mx->addProofExpr(pb, pbp_geq_sum);
-      current_constr_id_geq = pbp_geq_sum->_ctrid;
+      if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+        PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
+        pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
+        pbp_geq->addition(pair_sum.first->_ctrid);
+        pbp_geq->division(3);
+        mx->addProofExpr(pb, pbp_geq);
+        PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
+        pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
+        pbp_geq_sum->addition(current_constr_id_geq);
+        mx->addProofExpr(pb, pbp_geq_sum);
+        current_constr_id_geq = pbp_geq_sum->_ctrid;
+      }
 
-      PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
-      pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
-      pbp_leq->addition(pair_sum.second->_ctrid);
-      pbp_leq->division(3);
-      mx->addProofExpr(pb, pbp_leq);
-      PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
-      pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
-      pbp_leq_sum->addition(current_constr_id_leq);
-      mx->addProofExpr(pb, pbp_leq_sum);
-      current_constr_id_leq = pbp_leq_sum->_ctrid;
+      if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+        PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
+        pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
+        pbp_leq->addition(pair_sum.second->_ctrid);
+        pbp_leq->division(3);
+        mx->addProofExpr(pb, pbp_leq);
+        PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
+        pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
+        pbp_leq_sum->addition(current_constr_id_leq);
+        mx->addProofExpr(pb, pbp_leq_sum);
+        current_constr_id_leq = pbp_leq_sum->_ctrid;
+      }
     }
 
     result[i] = buckets[i].front();
@@ -323,29 +345,8 @@ void VAdder::numToBits(std::vector<uint64_t> &bits, uint64_t n,
   reverse(bits.begin(), bits.end());
 }
 
-void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula) {
-  mx = maxsat_formula;
-
-  switch (pb->_sign) {
-  case _PB_EQUAL_:
-    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
-    break;
-  case _PB_LESS_OR_EQUAL_:
-    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
-    break;
-  case _PB_GREATER_OR_EQUAL_:
-    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
-    break;
-  default:
-    assert(false);
-  }
-}
-
 void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
                     pb_Sign current_sign) {
-  assert(current_sign != _PB_EQUAL_);
-
   vec<Lit> lits;
   uint64_t sum = 0;
   vec<uint64_t> coeffs;
@@ -382,24 +383,21 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
   }
 
   // transform the constraint to consider the smallest rhs
+  bool flipped = false;
   if (sum - rhs < rhs) {
     for (int i = 0; i < lits.size(); i++) {
       lits[i] = ~(lits[i]);
     }
     rhs = sum - rhs;
-    if (current_sign == _PB_GREATER_OR_EQUAL_)
-      current_sign = _PB_LESS_OR_EQUAL_;
-    else
-      current_sign = _PB_GREATER_OR_EQUAL_;
+    if (current_sign != _PB_EQUAL_) {
+      if (current_sign == _PB_GREATER_OR_EQUAL_)
+        current_sign = _PB_LESS_OR_EQUAL_;
+      else
+        current_sign = _PB_GREATER_OR_EQUAL_;
+    }
+    flipped = true;
   }
 
-  // TODO: should we simplify the PB constraint?
-
-  encode(maxsat_formula, pb, lits, coeffs, rhs, current_sign);
-}
-
-void VAdder::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
-                    vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign) {
   _output.clear();
 
   uint64_t nb = ld64(rhs); // number of bits
@@ -414,7 +412,7 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
     }
   }
 
-  adderTree(maxsat_formula, pb, _buckets, _output, nb);
+  adderTree(maxsat_formula, pb, _buckets, _output, nb, current_sign, flipped);
 
   // k-simplification
   //  for (uint64_t i = nb; i < _buckets.size(); i++) {
@@ -427,13 +425,32 @@ void VAdder::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   std::vector<uint64_t> kBits;
   numToBits(kBits, _buckets.size(), rhs);
 
-  if (current_sign == _PB_LESS_OR_EQUAL_) {
-    lessThanOrEqual(maxsat_formula, pb, _output, kBits);
-  } else {
+  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     greaterThanOrEqual(maxsat_formula, pb, _output, kBits);
+  }
+  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+    lessThanOrEqual(maxsat_formula, pb, _output, kBits);
   }
 }
 
 uint64_t VAdder::ld64(const uint64_t x) {
   return (sizeof(uint64_t) << 3) - __builtin_clzll(x);
+}
+
+void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula) {
+  mx = maxsat_formula;
+
+  switch (pb->_sign) {
+  case _PB_EQUAL_:
+    encode(pb, maxsat_formula, _PB_EQUAL_);
+    break;
+  case _PB_LESS_OR_EQUAL_:
+    encode(pb, maxsat_formula, _PB_LESS_OR_EQUAL_);
+    break;
+  case _PB_GREATER_OR_EQUAL_:
+    encode(pb, maxsat_formula, _PB_GREATER_OR_EQUAL_);
+    break;
+  default:
+    assert(false);
+  }
 }
