@@ -44,3 +44,9 @@ for numVars in range(maxVars + 1):
         test_name = "adder_eq_neg_%i_vars_%i_degree" % (numVars, degree)
 
         TestAdder.makeTest(TestAdder.geq, test_name, coeffs, xs, -degree)
+
+test_name = "adder_saturated_1"
+TestAdder.makeTest(TestAdder.geq, test_name, [10, 2, 2], xs, 5)
+
+test_name = "adder_propagating_1"
+TestAdder.makeTest(TestAdder.geq, test_name, [-3, -2, -2], xs, -2)
