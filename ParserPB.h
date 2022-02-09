@@ -1,9 +1,12 @@
 /*!
+ * \author Ruben Martins - rubenm@andrew.cmu.edu
  * \author Vasco Manquinho - vmm@sat.inesc-id.pt
  *
  * @section LICENSE
  *
- * Open-WBO, Copyright (c) 2013-2015, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * Open-WBO, Copyright (c) 2013-2022, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -102,7 +105,7 @@ protected:
       ;
   }
 
-  inline void parseNumber(int64_t *coeff) {
+  inline int parseNumber(int64_t *coeff) {
     static char word[MAX_WORD_LENGTH];
     int i = 0, c = peek_char();
     int64_t conv;
@@ -120,13 +123,16 @@ protected:
     }
     unget_char();
     word[i] = '\0';
-    assert(i > 0);
+    if (i <= 0) return 1;
+    //assert(i > 0);
 
     std::istringstream ss(word);
     ss >> conv;
 
     // sscanf(word, "%d", &i);
     *coeff = (*coeff) * conv;
+
+    return 0;
   }
 
   inline void parseWord(char *varName, int *varNameSize) {

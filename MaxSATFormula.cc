@@ -1,9 +1,11 @@
 /*!
- * \author Ruben Martins - ruben@sat.inesc-id.pt
+ * \author Ruben Martins - rubenm@andrew.cmu.edu
  *
  * @section LICENSE
  *
- * Open-WBO, Copyright (c) 2013-2015, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * Open-WBO, Copyright (c) 2013-2022, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -166,42 +168,48 @@ void MaxSATFormula::addPBConstraint(PB *p) {
   // Add constraint to formula data structure.
   id++; // updates the current id of the constraint
   proof_log_id++;
-  if (p->isClause()) {
-    if (p->_sign == _PB_EQUAL_) {
-      assert(p->_lits.size() == 1);
-      vec<Lit> unit;
-      if (p->_rhs == 0)
-        unit.push(~p->_lits[0]);
-      else if (p->_rhs == 1)
-        unit.push(p->_lits[0]);
-      else
-        assert(false);
-      clause_ids.push(n_hard);
-      addHardClause(p, unit);
-    } else if (p->_sign == _PB_GREATER_OR_EQUAL_) {
-      clause_ids.push(n_hard);
-      addHardClause(p, p->_lits);
-    } else {
-      vec<Lit> neg_lits;
-      for (int i = 0; i < p->_lits.size(); i++) {
-        neg_lits.push(~p->_lits[i]);
-      }
-      clause_ids.push(n_hard);
-      addHardClause(p, neg_lits);
-    }
-  } else if (p->isCardinality()) {
-    cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
+  if (p->isEmpty()){
+    vec<Lit> empty;
+    addHardClause(p, empty);
   } else {
-    // if (!p->_sign) {
-    //   p->changeSign();
-    // }
 
-    // TODO: test PB constraints
-    pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign, id));
-  }
-  if (p->_sign == _PB_EQUAL_) {
-    id++;
-    proof_log_id++;
+    if (p->isClause()) {
+      if (p->_sign == _PB_EQUAL_) {
+        assert(p->_lits.size() == 1);
+        vec<Lit> unit;
+        if (p->_rhs == 0)
+          unit.push(~p->_lits[0]);
+        else if (p->_rhs == 1)
+          unit.push(p->_lits[0]);
+        else
+          assert(false);
+        clause_ids.push(n_hard);
+        addHardClause(p, unit);
+      } else if (p->_sign == _PB_GREATER_OR_EQUAL_) {
+        clause_ids.push(n_hard);
+        addHardClause(p, p->_lits);
+      } else {
+        vec<Lit> neg_lits;
+        for (int i = 0; i < p->_lits.size(); i++) {
+          neg_lits.push(~p->_lits[i]);
+        }
+        clause_ids.push(n_hard);
+        addHardClause(p, neg_lits);
+      }
+    } else if (p->isCardinality()) {
+      cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
+    } else {
+      // if (!p->_sign) {
+      //   p->changeSign();
+      // }
+
+      // TODO: test PB constraints
+      pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign, id));
+    }
+    if (p->_sign == _PB_EQUAL_) {
+      id++;
+      proof_log_id++;
+    }
   }
 }
 

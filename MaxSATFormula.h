@@ -3,9 +3,9 @@
  *
  * @section LICENSE
  *
- * Open-WBO, Copyright (c) 2013-2021, Ruben Martins, Vasco Manquinho, Ines Lynce
- * VeritasPBLib, Copyright (c) 2021, Andy Oertel, Stephan Gocht,
- *                                   Ruben Martins, Jakob Nordstrom
+ * Open-WBO, Copyright (c) 2013-2022, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -132,15 +132,17 @@ public:
   }
 
   void print(std::stringstream &ss, varMap &v) {
-    assert(clause.size() > 0);
-    for (int i = 0; i < clause.size(); i++) {
-      if (sign(clause[i]))
-        ss << "-";
-      varMap::const_iterator iter = v.find(var(clause[i]));
-      if (iter != v.end())
-        ss << iter->second << " ";
-      else
-        ss << (var(clause[i]) + 1) << " ";
+    if (clause.size() > 0){
+      for (int i = 0; i < clause.size(); i++) {
+        if (sign(clause[i]))
+          ss << "-";
+        varMap::const_iterator iter = v.find(var(clause[i]));
+        if (iter != v.end())
+          ss << iter->second << " ";
+        else
+          ss << (var(clause[i]) + 1) << " ";
+     
+      }
     }
     ss << "0\n";
   }

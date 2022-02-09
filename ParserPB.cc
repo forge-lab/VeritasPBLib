@@ -4,9 +4,9 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Ciaran
- * McCreesh, Jakob Nordstrom Open-WBO, Copyright (c) 2013-2021, Ruben Martins,
- * Vasco Manquinho, Ines Lynce
+ * Open-WBO, Copyright (c) 2013-2022, Ruben Martins, Vasco Manquinho, Ines Lynce
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -82,7 +82,7 @@ int ParserPB::parse(char *fileName) {
     int error = parseLine();
 
     if (error != 0) {
-      cout << "c Error: Parse Error " << error << " in line " << ++line << endl;
+      cout << "c Error: Parse Error in line " << ++line << endl;
       printf("s UNKNOWN\n");
       exit(_ERROR_);
     }
@@ -158,7 +158,12 @@ int ParserPB::parseCostFunction() {
   }
 
   do {
-    parseProduct(&coeff, varName, &varNameSize);
+    int error = parseProduct(&coeff, varName, &varNameSize);
+    if (error == 1) {
+      readUntilEndOfLine();
+      delete of;
+      return 1;
+    }
 
     int varID = getVariableID(varName, varNameSize);
 
@@ -198,7 +203,8 @@ int ParserPB::parseCostFunction() {
 int ParserPB::parseProduct(int64_t *coeff, char *varName, int *varNameSize) {
 
   skip_spaces();
-  parseNumber(coeff);
+  int error = parseNumber(coeff);
+  if (error == 1) return 1;
   skip_spaces();
   if (peek_char() == '*')
     get_char(); // To allow for '*' between coefficient and variable name
@@ -228,7 +234,12 @@ int ParserPB::parseConstraint() {
 
   // Read all products
   do {
-    parseProduct(&coeff, varName, &varNameSize);
+    int error = parseProduct(&coeff, varName, &varNameSize);
+    if (error == 1) {
+      readUntilEndOfLine();
+      delete p;
+      return 1;
+    }
     int varID = getVariableID(varName, varNameSize);
 
     p->addProduct(mkLit(varID), coeff);
@@ -272,15 +283,38 @@ int ParserPB::parseConstraint() {
 
   // Read constraint rhs
   // int64_t rhs;
-  parseNumber(&coeff);
+  int error = parseNumber(&coeff);
+  if (error == 1) {
+    readUntilEndOfLine();
+    delete p;
+    return 1;
+  }
   p->addRHS(coeff);
   // if (ctrSign == _PB_LESS_OR_EQUAL_) {
   //   p->changeSign();
   // }
 
   readUntilEndOfLine();
-  maxsat_formula->addPBConstraint(p);
+  // check if this constraint is trivially satisfied
+  int64_t total = 0;
+  for (int i = 0; i < p->_coeffs.size(); i++){
+    total += p->_coeffs[i];
+  }
+  printf("p->rhs %d, p->total %d\n",p->_rhs,total);
+  if (p->_rhs > total){
+    printf("c Warning: trivially unsatisfied constraint.\n");
+    p->_coeffs.clear();
+    p->_lits.clear();
+  } else if (p->_rhs == total){
+    printf("c Warning: all literals in the constraint must be satisfied.\n");
+  }
 
+  if (p->_rhs <= 0){
+    printf("c Warning: trivially satisfied constraint.\n");
+  } else {
+   maxsat_formula->addPBConstraint(p);   
+  }
+ 
   delete p;
 
   return 0;

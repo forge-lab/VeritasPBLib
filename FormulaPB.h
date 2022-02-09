@@ -142,6 +142,13 @@ public:
   //   _sign = !(_sign);
   // }
 
+  bool isEmpty() {
+    if (_coeffs.size() == 0)
+      return true;
+    else 
+      return false;
+  }
+
   bool isClause() {
     // unit clauses
     if (_sign == _PB_EQUAL_) {
@@ -170,22 +177,6 @@ public:
       }
     }
 
-    // Assume _sign == false...
-    // bool sign = _sign;
-    // if (_sign)
-    //   changeSign();
-    // if (_rhs != 1) {
-    //   if (_sign != sign)
-    //     changeSign();
-    //   return false;
-    // }
-    // for (int i = 0; i < _coeffs.size(); i++) {
-    //   if (_coeffs[i] != 1) {
-    //     if (_sign != sign)
-    //       changeSign();
-    //     return false;
-    //   }
-    // }
     return true;
   }
 
@@ -243,7 +234,7 @@ public:
     ss << _rhs << " ;";
     return ss.str();
   }
-
+  
   vec<int64_t> _coeffs;
   vec<Lit> _lits;
   int64_t _rhs;
