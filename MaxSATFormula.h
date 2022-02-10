@@ -92,22 +92,25 @@ public:
   ~Hard() { clause.clear(); }
 
   void printPBPu(std::stringstream &ss, varMap &v) {
-    assert(clause.size() > 0);
-    int rhs = 1;
-    ss << "u ";
-    for (int i = 0; i < clause.size(); i++) {
-      if (sign(clause[i])) {
-        ss << "1 ~x";
-        // rhs--;
-      } else
-        ss << "1 x";
-      varMap::const_iterator iter = v.find(var(clause[i]));
-      if (iter != v.end())
-        ss << iter->second << " ";
-      else
-        ss << (var(clause[i]) + 1) << " ";
+    if (clause.size() == 0){
+      ss << "u >= 1 ;\n";
+    } else {
+      int rhs = 1;
+      ss << "u ";
+      for (int i = 0; i < clause.size(); i++) {
+        if (sign(clause[i])) {
+          ss << "1 ~x";
+          // rhs--;
+        } else
+          ss << "1 x";
+        varMap::const_iterator iter = v.find(var(clause[i]));
+        if (iter != v.end())
+          ss << iter->second << " ";
+        else
+          ss << (var(clause[i]) + 1) << " ";
+      }
+      ss << ">= " << rhs << " ;\n";
     }
-    ss << ">= " << rhs << " ;\n";
   }
 
   std::string printPBPu(varMap &v) {
@@ -294,6 +297,17 @@ public:
     proof_log_id++;
     return proof_log_id;
   }
+
+  void bumpIds(){
+    proof_log_id++;
+    id++;
+  }
+
+  void decIds(){
+    proof_log_id--;
+    id--;
+  }
+
 
   void bumpProofLogId(int offset) { proof_log_id += offset; }
 

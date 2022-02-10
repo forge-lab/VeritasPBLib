@@ -305,6 +305,7 @@ int ParserPB::parseConstraint() {
     
     if (p->_rhs <= 0){
       printf("c Warning: trivially satisfied constraint.\n");
+      maxsat_formula->bumpIds();
     } else if (p->_rhs > total){
       printf("c Warning: trivially unsatisfied constraint.\n");
       p->_coeffs.clear();
@@ -313,13 +314,10 @@ int ParserPB::parseConstraint() {
     } else if (p->_rhs == total){
       printf("c Warning: all literals in the constraint must be satisfied.\n");
       for (int i = 0; i < p->_coeffs.size(); i++){
-        PB *unit = new PB();
-        unit->_sign = _PB_GREATER_OR_EQUAL_;
-        unit->_rhs = 1;
-        unit->_coeffs.push(1);
-        unit->_lits.push(p->_lits[i]);
-        maxsat_formula->addPBConstraint(unit);
+        _unit_clauses.push(p->_lits[i]);
       }
+      maxsat_formula->bumpIds();
+
     } else {
      maxsat_formula->addPBConstraint(p);   
     }
@@ -333,16 +331,13 @@ int ParserPB::parseConstraint() {
       maxsat_formula->addPBConstraint(p);
     } else if (p->_rhs >= total){
       printf("c Warning: trivially satisfied constraint.\n");
+      maxsat_formula->bumpIds();
     } else if (p->_rhs == 0){
       printf("c Warning: all literals in the constraint must be unsatisfied.\n");
       for (int i = 0; i < p->_coeffs.size(); i++){
-        PB *unit = new PB();
-        unit->_sign = _PB_GREATER_OR_EQUAL_;
-        unit->_rhs = 1;
-        unit->_coeffs.push(1);
-        unit->_lits.push(~p->_lits[i]);
-        maxsat_formula->addPBConstraint(unit);
+        _unit_clauses.push(~p->_lits[i]);
       }
+      maxsat_formula->bumpIds();
     } else {
      maxsat_formula->addPBConstraint(p);   
     }
@@ -354,26 +349,21 @@ int ParserPB::parseConstraint() {
       p->_coeffs.clear();
       p->_lits.clear();
       maxsat_formula->addPBConstraint(p);
+      maxsat_formula->bumpIds();
     } else if (p->_rhs == total){
       printf("c Warning: all literals in the constraint must be satisfied.\n");
       for (int i = 0; i < p->_coeffs.size(); i++){
-        PB *unit = new PB();
-        unit->_sign = _PB_GREATER_OR_EQUAL_;
-        unit->_rhs = 1;
-        unit->_coeffs.push(1);
-        unit->_lits.push(p->_lits[i]);
-        maxsat_formula->addPBConstraint(unit);
+        _unit_clauses.push(p->_lits[i]);
       }
+      maxsat_formula->bumpIds();
+      maxsat_formula->bumpIds();
     } else if (p->_rhs == 0){
       printf("c Warning: all literals in the constraint must be unsatisfied.\n");
       for (int i = 0; i < p->_coeffs.size(); i++){
-        PB *unit = new PB();
-        unit->_sign = _PB_GREATER_OR_EQUAL_;
-        unit->_rhs = 1;
-        unit->_coeffs.push(1);
-        unit->_lits.push(~p->_lits[i]);
-        maxsat_formula->addPBConstraint(unit);
+        _unit_clauses.push(~p->_lits[i]);
       }
+      maxsat_formula->bumpIds();
+      maxsat_formula->bumpIds();
     } else {
      maxsat_formula->addPBConstraint(p);   
     }

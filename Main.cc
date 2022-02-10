@@ -117,6 +117,7 @@ int main(int argc, char **argv) {
   MaxSATFormula *maxsat_formula = new MaxSATFormula();
   ParserPB *parser_pb = new ParserPB();
   parser_pb->parsePBFormula(argv[1], maxsat_formula);
+  parser_pb->addUnitClauses();
   maxsat_formula->setFormat(_FORMAT_PB_);
   gzclose(in);
 

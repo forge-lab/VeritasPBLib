@@ -81,6 +81,18 @@ public:
     parse(fileName);
   }
 
+  void addUnitClauses(){
+    for (int i = 0; i < _unit_clauses.size(); i++){
+      PB *unit = new PB();
+      unit->_sign = _PB_GREATER_OR_EQUAL_;
+      unit->_rhs = 1;
+      unit->_coeffs.push(1);
+      unit->_lits.push(_unit_clauses[i]);
+      maxsat_formula->addPBConstraint(unit);
+      maxsat_formula->decIds();
+    }
+  }
+
 protected:
   // OPB instance parsing.
   virtual int parseLine();
@@ -161,6 +173,8 @@ protected:
   int64_t _highestCoeffSum;
 
   MaxSATFormula *maxsat_formula;
+
+  vec<Lit> _unit_clauses;
 };
 
 } // namespace openwbo

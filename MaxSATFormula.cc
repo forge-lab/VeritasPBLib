@@ -170,6 +170,7 @@ void MaxSATFormula::addPBConstraint(PB *p) {
   proof_log_id++;
   if (p->isEmpty()){
     vec<Lit> empty;
+    clause_ids.push(n_hard);
     addHardClause(p, empty);
   } else {
 
