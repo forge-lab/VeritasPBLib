@@ -400,6 +400,7 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
 
   _output.clear();
 
+  assert(rhs > 0 && "log undefined for 0");
   uint64_t nb = ld64(rhs); // number of bits
   Lit u = lit_Undef;
 
