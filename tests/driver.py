@@ -137,6 +137,53 @@ class BaseTest(unittest.TestCase):
         else:
             self.assertEqual(state, RSResult.UNSAT.value)
 
+    @classmethod
+    def makeAllEqCoefsTests(cls, maxVars, factor = 1):
+        xs = [Variable(i) for i in range(1,maxVars + 1)]
+
+        minVars = 1
+
+        for numVars in range(minVars, maxVars + 1):
+            for degree in range(maxVars + 1):
+                degree *= factor
+                coeffs = [factor] * numVars
+                test_name = "%s_geq_base_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+                cls.makeTest(cls.geq, test_name, coeffs, xs, degree)
+
+        for numVars in range(minVars, maxVars + 1):
+            for degree in range(maxVars + 1):
+                degree *= factor
+                coeffs = [factor] * numVars
+                test_name = "%s_eq_base_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+                cls.makeTest(cls.geq, test_name, coeffs, xs, degree)
+
+        for numVars in range(minVars, maxVars + 1):
+            for degree in range(-1, maxVars + 1):
+                degree *= factor
+                coeffs = [-factor] * numVars
+                test_name = "%s_geq_neg_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+
+                cls.makeTest(cls.geq, test_name, coeffs, xs, -degree)
+
+        for numVars in range(minVars, maxVars + 1):
+            for degree in range(-1, maxVars + 1):
+                degree *= factor
+                coeffs = [-factor] * numVars
+                test_name = "%s_eq_neg_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+
+                cls.makeTest(cls.geq, test_name, coeffs, xs, -degree)
+
+    @classmethod
+    def makeGeneralPBTests(cls):
+        maxVars = 10
+        xs = [Variable(i) for i in range(1,maxVars + 1)]
+
+        test_name = "%s_saturated_1"%(cls.encoding_name)
+        cls.makeTest(cls.geq, test_name, [10, 2, 2], xs, 5)
+
+        test_name = "%s_propagating_1"%(cls.encoding_name)
+        cls.makeTest(cls.geq, test_name, [-3, -2, -2], xs, -2)
+
 
 class Driver:
     def __init__(self, test_name):
