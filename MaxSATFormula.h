@@ -132,7 +132,7 @@ public:
   }
 
   void print(std::stringstream &ss, varMap &v) {
-    if (clause.size() > 0){
+    if (clause.size() > 0) {
       for (int i = 0; i < clause.size(); i++) {
         if (sign(clause[i]))
           ss << "-";
@@ -141,7 +141,6 @@ public:
           ss << iter->second << " ";
         else
           ss << (var(clause[i]) + 1) << " ";
-     
       }
     }
     ss << "0\n";
@@ -177,6 +176,7 @@ public:
     objective_function = NULL;
     format = _FORMAT_MAXSAT_;
     id = 0;
+    proof_log_id = 0;
   }
 
   ~MaxSATFormula() {
