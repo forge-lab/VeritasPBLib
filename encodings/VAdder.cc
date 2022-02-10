@@ -412,6 +412,13 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
     }
   }
 
+  for (int iVar = 0; iVar < lits.size(); ++iVar) {
+    if (((((uint64_t)1) << nb) < coeffs[iVar]))
+      _buckets.back().push(lits[iVar]);
+  }
+
+  fflush(stdout);
+
   adderTree(maxsat_formula, pb, _buckets, _output, nb, current_sign, flipped);
 
   // k-simplification
@@ -425,11 +432,15 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
   std::vector<uint64_t> kBits;
   numToBits(kBits, _buckets.size(), rhs);
 
+  printf("%d, %d, %d, %d\n", var(_output[0]), var(_output[1]), var(_output[2]),
+         var(_output[3]));
+
   if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     greaterThanOrEqual(maxsat_formula, pb, _output, kBits);
   }
   if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     lessThanOrEqual(maxsat_formula, pb, _output, kBits);
+    printf("leq");
   }
 }
 

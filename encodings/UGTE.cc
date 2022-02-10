@@ -324,7 +324,7 @@ void UGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
 
   weightedlitst out_list = sort_to_list(pb_oliterals);
   if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    for (uint i = 0; i < out_list.size(); i++) {
+    for (uint i = out_list.size() - 1; i >= 0; i--) {
       if (out_list[i].weight > rhs) {
         addUnitClause(maxsat_formula, pb, ~out_list[i].lit);
       } else {
@@ -333,7 +333,7 @@ void UGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
     }
   }
   if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    for (uint i = 0; i < out_list.size(); i++) {
+    for (uint i = out_list.size() - 1; i >= 0; i--) {
       if (out_list[i].weight >= rhs) {
         addUnitClause(maxsat_formula, pb, out_list[i].lit);
       } else {

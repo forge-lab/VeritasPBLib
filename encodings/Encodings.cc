@@ -57,6 +57,24 @@ void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula) {
 }
 
 void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula) {
+  // saturate constraint
+  PBPp *pbp_saturate = new PBPp(maxsat_formula->getIncProofLogId());
+  pbp_saturate->saturation(pb->_id);
+  maxsat_formula->addProofExpr(pb, pbp_saturate);
+  pb->_id = pbp_saturate->_ctrid;
+  if (pb->_sign == _PB_EQUAL_) {
+    PBPp *pbp_saturate_eq = new PBPp(maxsat_formula->getIncProofLogId());
+    pbp_saturate_eq->saturation(pb->_id + 1);
+    maxsat_formula->addProofExpr(pb, pbp_saturate_eq);
+  }
+
+  if (pb->_sign != _PB_LESS_OR_EQUAL_) {
+    for (int i = 0; i < pb->_coeffs.size(); i++) {
+      if (pb->_coeffs[i] > pb->_rhs) {
+        pb->_coeffs[i] = pb->_rhs;
+      }
+    }
+  }
 
   if (_pb_type == _PB_GTE_) {
     UGTE *gte = new UGTE();
