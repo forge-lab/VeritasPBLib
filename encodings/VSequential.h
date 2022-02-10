@@ -3,7 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,13 +40,16 @@ namespace openwbo {
 class VSequential : public Encodings {
 
 public:
-  VSequential() {}
+  VSequential(bool proof = true) {
+    _proof = proof;
+  }
   ~VSequential() {}
 
   void encode(Card *card, MaxSATFormula *maxsat_formula);
 
 private:
   void encode(Card *card, MaxSATFormula *maxsat_formula, pb_Sign sign);
+  bool _proof;
 };
 } // namespace openwbo
 

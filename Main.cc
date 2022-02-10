@@ -93,6 +93,10 @@ int main(int argc, char **argv) {
   BoolOption verified("VeritasPBLib", "verified",
                       "Uses the verified version of the encoding", 1);
 
+
+  BoolOption proof("VeritasPBLib", "proof",
+                   "Stores information and writes the proof to file", 1);
+
   parseOptions(argc, argv, true);
 
   double initial_time = cpuTime();
@@ -202,13 +206,13 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < maxsat_formula->nCard(); i++) {
       Card *c = maxsat_formula->getCardinalityConstraint(i);
-      encoder->encode(c, maxsat_formula);
+      encoder->encode(c, maxsat_formula, (int)proof==1);
       maxsat_formula->bumpProofLogId(c->clause_ids.size());
     }
 
     for (int i = 0; i < maxsat_formula->nPB(); i++) {
       PB *p = maxsat_formula->getPBConstraint(i);
-      encoder->encode(p, maxsat_formula);
+      encoder->encode(p, maxsat_formula, (int)proof==1);
       maxsat_formula->bumpProofLogId(p->clause_ids.size());
     }
 
@@ -216,12 +220,12 @@ int main(int argc, char **argv) {
     filename = filename.substr(0, filename.find_last_of("."));
 
     maxsat_formula->printCNFtoFile(filename);
-    if (verified) {
+    if (proof) {
       maxsat_formula->printPBPtoFile(filename);
     }
 
     std::cout << "c CNF file " << filename << ".cnf" << std::endl;
-    if (verified) {
+    if (proof) {
       std::cout << "c PBP file " << filename << ".pbp" << std::endl;
     }
 

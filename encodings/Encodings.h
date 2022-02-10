@@ -3,8 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob
- * Nordstrom
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -64,8 +64,8 @@ public:
   void addQuaternaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a, Lit b,
                            Lit c, Lit d);
   void addClause(MaxSATFormula *mx, Constraint *ctr, vec<Lit> &c);
-  void encode(Card *card, MaxSATFormula *maxsat_formula);
-  void encode(PB *pb, MaxSATFormula *maxsat_formula);
+  void encode(Card *card, MaxSATFormula *maxsat_formula, bool proof = true);
+  void encode(PB *pb, MaxSATFormula *maxsat_formula, bool proof = true);
 
 protected:
   vec<Lit> clause; // Temporary clause to be used while building the encodings.

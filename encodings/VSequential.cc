@@ -3,7 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -102,56 +103,59 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
     }
   }
 
-  // pbp logging
-  vec<int> leq;
-  vec<int> geq;
+  if (_proof){
+    // pbp logging
+    vec<int> leq;
+    vec<int> geq;
 
-  for (int i = 1; i <= n; i++) {
-    int m = i;
-    if ((k + 1) < m)
-      m = k + 1;
-    // derive_unary_sum(l_i + sum^m_{i-1},j=1 s_{i-1},j = sum^m_i,j=1 s_i,j)
-    vec<Lit> left;
-    vec<Lit> right;
-    left.push(lits[i - 1]);
-    for (int j = 1; j <= m; j++) {
-      right.push(seq_auxiliary[i - 1][j - 1]);
-      if (j != m) {
-        left.push(seq_auxiliary[i - 2][j - 1]);
+    for (int i = 1; i <= n; i++) {
+      int m = i;
+      if ((k + 1) < m)
+        m = k + 1;
+      // derive_unary_sum(l_i + sum^m_{i-1},j=1 s_{i-1},j = sum^m_i,j=1 s_i,j)
+      vec<Lit> left;
+      vec<Lit> right;
+      left.push(lits[i - 1]);
+      for (int j = 1; j <= m; j++) {
+        right.push(seq_auxiliary[i - 1][j - 1]);
+        if (j != m) {
+          left.push(seq_auxiliary[i - 2][j - 1]);
+        }
       }
+      assert(left.size() == right.size());
+      std::pair<int, int> res = derive_unary_sum(card, left, right);
+      geq.push(res.first);
+      leq.push(res.second);
     }
-    assert(left.size() == right.size());
-    std::pair<int, int> res = derive_unary_sum(card, left, right);
-    geq.push(res.first);
-    leq.push(res.second);
-  }
 
-  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    if (current_sign == _PB_EQUAL_ && flipped) {
-      pbp->addition(card->_id + 1, leq[0]);
-    } else {
-      pbp->addition(card->_id, leq[0]);
+    if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+      PBPp *pbp = new PBPp(mx->getIncProofLogId());
+      if (current_sign == _PB_EQUAL_ && flipped) {
+        pbp->addition(card->_id + 1, leq[0]);
+      } else {
+        pbp->addition(card->_id, leq[0]);
+      }
+      for (int i = 1; i < leq.size(); i++) {
+        pbp->addition(leq[i]);
+      }
+      mx->addProofExpr(card, pbp);
     }
-    for (int i = 1; i < leq.size(); i++) {
-      pbp->addition(leq[i]);
-    }
-    mx->addProofExpr(card, pbp);
-  }
 
-  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    if (current_sign == _PB_EQUAL_ && !flipped) {
-      pbp->addition(card->_id + 1, geq[0]);
-    } else {
-      pbp->addition(card->_id, leq[0]);
+
+    if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+      PBPp *pbp = new PBPp(mx->getIncProofLogId());
+      if (current_sign == _PB_EQUAL_ && !flipped) {
+        pbp->addition(card->_id + 1, geq[0]);
+      } else {
+        pbp->addition(card->_id, leq[0]);
+      }
+      for (int i = 1; i < geq.size(); i++) {
+        pbp->addition(geq[i]);
+      }
+      mx->addProofExpr(card, pbp);
     }
-    for (int i = 1; i < geq.size(); i++) {
-      pbp->addition(geq[i]);
-    }
-    mx->addProofExpr(card, pbp);
+    // end pbp logging
   }
-  // end pbp logging
 
   if (current_sign == _PB_GREATER_OR_EQUAL_)
     k--;

@@ -3,8 +3,8 @@
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob
- * Nordstrom
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@
 
 using namespace openwbo;
 
-void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula) {
+void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula, bool proof) {
 
   if (_cardinality_type == _CARD_SEQUENTIAL_) {
     USequential *seq = new USequential();
@@ -47,16 +47,16 @@ void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula) {
     UTotalizer *tot = new UTotalizer();
     tot->encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_VSEQUENTIAL_) {
-    VSequential *vseq = new VSequential();
+    VSequential *vseq = new VSequential(proof);
     vseq->encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_VTOTALIZER_) {
-    VTotalizer *tot = new VTotalizer();
+    VTotalizer *tot = new VTotalizer(proof);
     tot->encode(card, maxsat_formula);
   } else
     assert(false);
 }
 
-void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula) {
+void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula, bool proof) {
   // saturate constraint
   PBPp *pbp_saturate = new PBPp(maxsat_formula->getIncProofLogId());
   pbp_saturate->saturation(pb->_id);

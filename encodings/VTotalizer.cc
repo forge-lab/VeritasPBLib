@@ -1,10 +1,10 @@
 /*!
- * \author Ruben Martins - rubenm@andrew.cmu.edu
+ * \author Andy Oertel - andy.oertel@cs.lth.se
  *
  * @section LICENSE
  *
- * VeritasPBLib, Copyright (c) 2021, Ruben Martins, Stephan Gocht, Jakob
- * Nordstrom
+ * VeritasPBLib, Copyright (c) 2021-2022, Stephan Gocht, Andy Oertel
+ *                                        Ruben Martins, Jakob Nordstrom
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -107,15 +107,17 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, Card *card,
   adder(maxsat_formula, card, left, right, lits_out);
 
   // proof log unary sum
-  vec<Lit> lits_in;
-  left.copyTo(lits_in);
-  for (int i = 0; i < right.size(); i++) {
-    lits_in.push(right[i]);
+  if (_proof){
+    vec<Lit> lits_in;
+    left.copyTo(lits_in);
+    for (int i = 0; i < right.size(); i++) {
+      lits_in.push(right[i]);
+    }
+    assert(lits_in.size() == lits_out.size());
+    std::pair<int, int> res_pair = derive_unary_sum(card, lits_in, lits_out);
+    geq.push(res_pair.first);
+    leq.push(res_pair.second);
   }
-  assert(lits_in.size() == lits_out.size());
-  std::pair<int, int> res_pair = derive_unary_sum(card, lits_in, lits_out);
-  geq.push(res_pair.first);
-  leq.push(res_pair.second);
 
   // k-simplification
   lits_out.shrink(lits_out.size() - k);
@@ -204,29 +206,31 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   }
 
   // proof log fixing output
-  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    if (current_sign == _PB_EQUAL_ && flipped) {
-      pbp->addition(card->_id + 1, leq[0]);
-    } else {
-      pbp->addition(card->_id, leq[0]);
+  if (_proof){
+    if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+      PBPp *pbp = new PBPp(mx->getIncProofLogId());
+      if (current_sign == _PB_EQUAL_ && flipped) {
+        pbp->addition(card->_id + 1, leq[0]);
+      } else {
+        pbp->addition(card->_id, leq[0]);
+      }
+      for (int i = 1; i < leq.size(); i++) {
+        pbp->addition(leq[i]);
+      }
+      mx->addProofExpr(card, pbp);
     }
-    for (int i = 1; i < leq.size(); i++) {
-      pbp->addition(leq[i]);
+    if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+      PBPp *pbp = new PBPp(mx->getIncProofLogId());
+      if (current_sign == _PB_EQUAL_ && !flipped) {
+        pbp->addition(card->_id + 1, geq[0]);
+      } else {
+        pbp->addition(card->_id, geq[0]);
+      }
+      for (int i = 1; i < geq.size(); i++) {
+        pbp->addition(geq[i]);
+      }
+      mx->addProofExpr(card, pbp);
     }
-    mx->addProofExpr(card, pbp);
-  }
-  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    PBPp *pbp = new PBPp(mx->getIncProofLogId());
-    if (current_sign == _PB_EQUAL_ && !flipped) {
-      pbp->addition(card->_id + 1, geq[0]);
-    } else {
-      pbp->addition(card->_id, geq[0]);
-    }
-    for (int i = 1; i < geq.size(); i++) {
-      pbp->addition(geq[i]);
-    }
-    mx->addProofExpr(card, pbp);
   }
 }
 
