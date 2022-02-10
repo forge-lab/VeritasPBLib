@@ -61,12 +61,12 @@ void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula) {
   PBPp *pbp_saturate = new PBPp(maxsat_formula->getIncProofLogId());
   pbp_saturate->saturation(pb->_id);
   maxsat_formula->addProofExpr(pb, pbp_saturate);
-  pb->_id = pbp_saturate->_ctrid;
   if (pb->_sign == _PB_EQUAL_) {
     PBPp *pbp_saturate_eq = new PBPp(maxsat_formula->getIncProofLogId());
     pbp_saturate_eq->saturation(pb->_id + 1);
     maxsat_formula->addProofExpr(pb, pbp_saturate_eq);
   }
+  pb->_id = pbp_saturate->_ctrid;
 
   if (pb->_sign != _PB_LESS_OR_EQUAL_) {
     for (int i = 0; i < pb->_coeffs.size(); i++) {
