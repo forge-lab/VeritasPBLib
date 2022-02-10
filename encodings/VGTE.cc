@@ -88,7 +88,7 @@ weightedlitst VGTE::sort_to_list(wlit_mapt &map) {
   weightedlitst list;
   wlitt wl;
   wl.weight = 0;
-  wl.lit = map.end()->second;
+  wl.lit = map.begin()->second;
   list.push_back(wl);
   for (wlit_mapt::iterator it = map.begin(); it != map.end(); it++) {
     wlitt wl;
