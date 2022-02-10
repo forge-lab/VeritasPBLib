@@ -116,7 +116,7 @@ class BaseTest(unittest.TestCase):
     def eq(self, test_name, coeffs, variables, degree):
         terms = Add([Mult([a, x]) for a, x in zip(coeffs, variables)])
         terms.isNormalized = True
-        constraint = Geq(terms, Integer(degree))
+        constraint = Equals(terms, Integer(degree))
         constraint.isNormalized = True
         opt = minimize(coeffs, degree)
 
@@ -155,7 +155,7 @@ class BaseTest(unittest.TestCase):
                 degree *= factor
                 coeffs = [factor] * numVars
                 test_name = "%s_eq_base_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
-                cls.makeTest(cls.geq, test_name, coeffs, xs, degree)
+                cls.makeTest(cls.eq, test_name, coeffs, xs, degree)
 
         for numVars in range(minVars, maxVars + 1):
             for degree in range(-1, maxVars + 1):
@@ -171,7 +171,7 @@ class BaseTest(unittest.TestCase):
                 coeffs = [-factor] * numVars
                 test_name = "%s_eq_neg_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
 
-                cls.makeTest(cls.geq, test_name, coeffs, xs, -degree)
+                cls.makeTest(cls.eq, test_name, coeffs, xs, -degree)
 
     @classmethod
     def makeGeneralPBTests(cls):
