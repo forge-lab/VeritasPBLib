@@ -10,39 +10,48 @@ from pbcas.cnf_formula import CNFFormula
 from veripb import run as veripb_verify
 from pathlib import Path
 
+
 class CardinalityEncoding(Enum):
-    TOTALIZER = "0"
-    SEQUENTIAL = "1"
+    TOTALIZER = "1"
+    SEQUENTIAL = "0"
+
 
 class PBEncoding(Enum):
     GTE = "0"
     ADDER = "1"
 
-def run_encoder(file_path, card_encoding = CardinalityEncoding.TOTALIZER, pb_encoding = PBEncoding.GTE):
+
+def run_encoder(file_path, card_encoding=CardinalityEncoding.TOTALIZER, pb_encoding=PBEncoding.GTE):
     result = subprocess.run([vertiaspblib, "-card=" + card_encoding.value, "-pb=" + pb_encoding.value, "-verified", file_path],
-        stdout=subprocess.DEVNULL)
+                            stdout=subprocess.DEVNULL)
 
     if result.returncode != 0:
         raise EncoderInvalidReturnCode(result.returncode)
+
 
 class RSResult(Enum):
     OPT = "OPTIMUM"
     SAT = "SATISFIABLE"
     UNSAT = "UNSATISFIABLE"
 
+
 class InvalidReturnCode(RuntimeError):
     pass
+
 
 class RoundingSATInvalidReturnCode(InvalidReturnCode):
     pass
 
+
 class EncoderInvalidReturnCode(InvalidReturnCode):
     pass
 
-def run_roundingsat(file_path):
-    rs = subprocess.run([roundingsat, file_path], stdout = subprocess.PIPE, encoding="utf-8")
 
-    if rs.returncode not in [20,30]:
+def run_roundingsat(file_path):
+    rs = subprocess.run([roundingsat, file_path],
+                        stdout=subprocess.PIPE, encoding="utf-8")
+
+    if rs.returncode not in [20, 30]:
         raise RoundingSATInvalidReturnCode(rs.returncode)
 
     stream = rs.stdout
@@ -62,17 +71,17 @@ def run_roundingsat(file_path):
                 result = line.split()[1]
     return (result, int(objectiveVal) if objectiveVal is not None else None)
 
+
 def minimize(values, bound):
     minimum = None
-    for assmt in itertools.product([0,1], repeat=len(values)):
-        val = sum((a*b) for a,b in zip(assmt, values))
+    for assmt in itertools.product([0, 1], repeat=len(values)):
+        val = sum((a*b) for a, b in zip(assmt, values))
         if val >= bound:
             if minimum is None:
                 minimum = val
             else:
                 minimum = min(minimum, val)
     return minimum
-
 
 
 class BaseTest(unittest.TestCase):
@@ -84,19 +93,19 @@ class BaseTest(unittest.TestCase):
         def method(self):
             fun(self, test_name, *args)
 
-        method.__name__ = "test_%s"%(test_name)
+        method.__name__ = "test_%s" % (test_name)
         setattr(cls, method.__name__, method)
 
-
     def geq(self, test_name, coeffs, variables, degree):
-        terms = Add([Mult([a, x]) for a,x in zip(coeffs,variables)])
+        terms = Add([Mult([a, x]) for a, x in zip(coeffs, variables)])
         terms.isNormalized = True
         constraint = Geq(terms, Integer(degree))
         constraint.isNormalized = True
         opt = minimize(coeffs, degree)
 
         driver = Driver(test_name)
-        driver.encode([constraint], card_encoding = self.card_encoding, pb_encoding = self.pb_encoding)
+        driver.encode([constraint], card_encoding=self.card_encoding,
+                      pb_encoding=self.pb_encoding)
         state, value = driver.minimize(terms)
         if opt is not None:
             self.assertEqual(state, RSResult.OPT.value)
@@ -104,16 +113,16 @@ class BaseTest(unittest.TestCase):
         else:
             self.assertEqual(state, RSResult.UNSAT.value)
 
-
     def eq(self, test_name, coeffs, variables, degree):
-        terms = Add([Mult([a, x]) for a,x in zip(coeffs,variables)])
+        terms = Add([Mult([a, x]) for a, x in zip(coeffs, variables)])
         terms.isNormalized = True
         constraint = Geq(terms, Integer(degree))
         constraint.isNormalized = True
         opt = minimize(coeffs, degree)
 
         driver = Driver(test_name)
-        driver.encode([constraint], card_encoding = self.card_encoding, pb_encoding = self.pb_encoding)
+        driver.encode([constraint], card_encoding=self.card_encoding,
+                      pb_encoding=self.pb_encoding)
         state, value = driver.minimize(terms)
         if opt is not None:
             self.assertEqual(state, RSResult.OPT.value)
@@ -128,9 +137,10 @@ class BaseTest(unittest.TestCase):
         else:
             self.assertEqual(state, RSResult.UNSAT.value)
 
+
 class Driver:
     def __init__(self, test_name):
-        self.toEncode = Path("generated/%s.opb"%(test_name))
+        self.toEncode = Path("generated/%s.opb" % (test_name))
         self.proof = self.toEncode.with_suffix(".pbp")
         self.encoded = self.toEncode.with_suffix(".cnf")
         self.opt_min = self.toEncode.with_suffix(".min.opt.obp")
@@ -138,12 +148,12 @@ class Driver:
 
         self.cnf = None
 
-    def encode(self, constraints, card_encoding = CardinalityEncoding.TOTALIZER, pb_encoding = PBEncoding.GTE):
+    def encode(self, constraints, card_encoding=CardinalityEncoding.TOTALIZER, pb_encoding=PBEncoding.GTE):
         formula = OPBFormula(constraints)
         with open(self.toEncode, "w") as file:
             formula.write(file)
 
-        run_encoder(self.toEncode)
+        run_encoder(self.toEncode, card_encoding, pb_encoding)
 
         with open(self.toEncode, "r") as opb:
             with open(self.proof, "r") as pbp:
@@ -153,7 +163,7 @@ class Driver:
             self.cnf = CNFFormula.read(file)
 
     def minimize(self, objective):
-        opb = OPBFormula(self.cnf.getConstraints(), objective = objective)
+        opb = OPBFormula(self.cnf.getConstraints(), objective=objective)
 
         with open(self.opt_min, "w") as file:
             opb.write(file)
@@ -173,7 +183,7 @@ class Driver:
         flippedObj = Add(terms)
         flippedObj.isNormalized = True
 
-        opb = OPBFormula(self.cnf.getConstraints(), objective = flippedObj)
+        opb = OPBFormula(self.cnf.getConstraints(), objective=flippedObj)
 
         with open(self.opt_max, "w") as file:
             opb.write(file)
@@ -181,10 +191,9 @@ class Driver:
         result, val = run_roundingsat(self.opt_max)
         return (result, -val if val is not None else None)
 
+
 def main():
-    print(minimize([-2,-2,-2],-8))
-
-
+    print(minimize([-2, -2, -2], -8))
 
 
 if __name__ == '__main__':
