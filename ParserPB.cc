@@ -265,7 +265,6 @@ int ParserPB::parseConstraint() {
     p->_sign = _PB_EQUAL_;
   } else if (c == '<') {
     ctrSign = _PB_LESS_OR_EQUAL_;
-    // p->_sign = true;
     p->_sign = _PB_LESS_OR_EQUAL_;
   }
 
@@ -295,24 +294,89 @@ int ParserPB::parseConstraint() {
   // }
 
   readUntilEndOfLine();
-  // check if this constraint is trivially satisfied
-  int64_t total = 0;
-  for (int i = 0; i < p->_coeffs.size(); i++){
-    total += p->_coeffs[i];
-  }
-  printf("p->rhs %d, p->total %d\n",p->_rhs,total);
-  if (p->_rhs > total){
-    printf("c Warning: trivially unsatisfied constraint.\n");
-    p->_coeffs.clear();
-    p->_lits.clear();
-  } else if (p->_rhs == total){
-    printf("c Warning: all literals in the constraint must be satisfied.\n");
-  }
 
-  if (p->_rhs <= 0){
-    printf("c Warning: trivially satisfied constraint.\n");
+  // check if this constraint is trivially satisfied
+    int64_t total = 0;
+    for (int i = 0; i < p->_coeffs.size(); i++){
+      total += p->_coeffs[i];
+    }
+
+  if (ctrSign == _PB_GREATER_OR_EQUAL_){
+    
+    if (p->_rhs < 0){
+      printf("c Warning: trivially satisfied constraint.\n");
+    } else if (p->_rhs > total){
+      printf("c Warning: trivially unsatisfied constraint.\n");
+      p->_coeffs.clear();
+      p->_lits.clear();
+      maxsat_formula->addPBConstraint(p);
+    } else if (p->_rhs == total){
+      printf("c Warning: all literals in the constraint must be satisfied.\n");
+      for (int i = 0; i < p->_coeffs.size(); i++){
+        PB *unit = new PB();
+        unit->_sign = _PB_GREATER_OR_EQUAL_;
+        unit->_rhs = 1;
+        unit->_coeffs.push(1);
+        unit->_lits.push(p->_lits[i]);
+        maxsat_formula->addPBConstraint(unit);
+      }
+    } else {
+     maxsat_formula->addPBConstraint(p);   
+    }
+
+  } else if (ctrSign == _PB_LESS_OR_EQUAL_){
+    
+    if (p->_rhs < 0){
+      printf("c Warning: trivially unsatisfied constraint.\n");
+      p->_coeffs.clear();
+      p->_lits.clear();
+      maxsat_formula->addPBConstraint(p);
+    } else if (p->_rhs >= total){
+      printf("c Warning: trivially satisfied constraint.\n");
+    } else if (p->_rhs == 0){
+      printf("c Warning: all literals in the constraint must be unsatisfied.\n");
+      for (int i = 0; i < p->_coeffs.size(); i++){
+        PB *unit = new PB();
+        unit->_sign = _PB_GREATER_OR_EQUAL_;
+        unit->_rhs = 1;
+        unit->_coeffs.push(1);
+        unit->_lits.push(~p->_lits[i]);
+        maxsat_formula->addPBConstraint(unit);
+      }
+    } else {
+     maxsat_formula->addPBConstraint(p);   
+    }
+
   } else {
-   maxsat_formula->addPBConstraint(p);   
+    // equality constraints
+    if (p->_rhs < 0 || p->_rhs > total){
+      printf("c Warning: trivially unsatisfied constraint.\n");
+      p->_coeffs.clear();
+      p->_lits.clear();
+      maxsat_formula->addPBConstraint(p);
+    } else if (p->_rhs == total){
+      printf("c Warning: all literals in the constraint must be satisfied.\n");
+      for (int i = 0; i < p->_coeffs.size(); i++){
+        PB *unit = new PB();
+        unit->_sign = _PB_GREATER_OR_EQUAL_;
+        unit->_rhs = 1;
+        unit->_coeffs.push(1);
+        unit->_lits.push(p->_lits[i]);
+        maxsat_formula->addPBConstraint(unit);
+      }
+    } else if (p->_rhs == 0){
+      printf("c Warning: all literals in the constraint must be unsatisfied.\n");
+      for (int i = 0; i < p->_coeffs.size(); i++){
+        PB *unit = new PB();
+        unit->_sign = _PB_GREATER_OR_EQUAL_;
+        unit->_rhs = 1;
+        unit->_coeffs.push(1);
+        unit->_lits.push(~p->_lits[i]);
+        maxsat_formula->addPBConstraint(unit);
+      }
+    } else {
+     maxsat_formula->addPBConstraint(p);   
+    }
   }
  
   delete p;
