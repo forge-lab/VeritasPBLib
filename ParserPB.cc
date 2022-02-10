@@ -300,10 +300,10 @@ int ParserPB::parseConstraint() {
     for (int i = 0; i < p->_coeffs.size(); i++){
       total += p->_coeffs[i];
     }
-
+ 
   if (ctrSign == _PB_GREATER_OR_EQUAL_){
     
-    if (p->_rhs < 0){
+    if (p->_rhs <= 0){
       printf("c Warning: trivially satisfied constraint.\n");
     } else if (p->_rhs > total){
       printf("c Warning: trivially unsatisfied constraint.\n");
