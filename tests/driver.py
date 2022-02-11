@@ -102,8 +102,6 @@ class BaseTest(unittest.TestCase):
         constraint = Geq(terms, Integer(degree))
         constraint.isNormalized = True
         opt = minimize(coeffs, degree)
-        if opt != degree:
-            opt = None
 
         driver = Driver(test_name)
         driver.encode([constraint], card_encoding=self.card_encoding,
@@ -121,6 +119,8 @@ class BaseTest(unittest.TestCase):
         constraint = Equals(terms, Integer(degree))
         constraint.isNormalized = True
         opt = minimize(coeffs, degree)
+        if opt != degree:
+            opt = None
 
         driver = Driver(test_name)
         driver.encode([constraint], card_encoding=self.card_encoding,
