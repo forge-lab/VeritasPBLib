@@ -232,7 +232,7 @@ uint64_t VGTE::succ(wlit_mapt &literals, uint64_t weight) {
 // recursive algorithm that actually encodes the PB constraint
 bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
                      const weightedlitst &iliterals, wlit_mapt &oliterals,
-                     vec<int> &geq, vec<int> &leq) {
+                     pb_Sign current_sign, vec<int> &geq, vec<int> &leq) {
   if (iliterals.size() == 0 || k == 0)
     return false;
 
@@ -266,11 +266,12 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
 
   // process recursion (with fresh constructed left and right literals)
   // -> literal lists are different for each call
-  bool result = encodeLeq(lk, maxsat_formula, pb, linputs, loutputs, geq, leq);
+  bool result = encodeLeq(lk, maxsat_formula, pb, linputs, loutputs,
+                          current_sign, geq, leq);
   if (!result)
     return result;
-  result =
-      result && encodeLeq(rk, maxsat_formula, pb, rinputs, routputs, geq, leq);
+  result = result && encodeLeq(rk, maxsat_formula, pb, rinputs, routputs,
+                               current_sign, geq, leq);
   if (!result)
     return result;
 
@@ -351,12 +352,18 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
   vec<uint64_t> weights_to_remove;
   for (wlit_mapt::iterator lit = oliterals.begin(); lit != oliterals.end();
        lit++) {
-    if (lit->first >= k && lit->first < max_lit_weight) {
+    if (lit->first > k && lit->first < max_lit_weight) {
       weights_to_remove.push(max_lit_weight);
       max_lit_weight = lit->first;
+      if (current_sign != _PB_GREATER_OR_EQUAL_) {
+        addUnitClause(maxsat_formula, pb, ~lit->second);
+      }
     }
     if (lit->first > max_lit_weight) {
       weights_to_remove.push(lit->first);
+      if (current_sign != _PB_GREATER_OR_EQUAL_) {
+        addUnitClause(maxsat_formula, pb, ~lit->second);
+      }
     }
   }
   for (int i = 0; i < weights_to_remove.size(); i++) {
@@ -473,9 +480,11 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
   vec<int> geq;
   vec<int> leq;
   if (current_sign == _PB_GREATER_OR_EQUAL_) {
-    encodeLeq(rhs, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
+    encodeLeq(rhs, maxsat_formula, pb, iliterals, pb_oliterals, current_sign,
+              geq, leq);
   } else {
-    encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals, geq, leq);
+    encodeLeq(rhs + 1, maxsat_formula, pb, iliterals, pb_oliterals,
+              current_sign, geq, leq);
   }
 
   // begin proof log output

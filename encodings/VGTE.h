@@ -57,7 +57,7 @@ protected:
 
   bool encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
                  const weightedlitst &iliterals, wlit_mapt &oliterals,
-                 vec<int> &geq, vec<int> &leq);
+                 pb_Sign current_sign, vec<int> &geq, vec<int> &leq);
   Lit getNewLit(MaxSATFormula *maxsat_formula);
   Lit get_var(MaxSATFormula *maxsat_formula, wlit_mapt &oliterals,
               uint64_t weight);
