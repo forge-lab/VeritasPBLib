@@ -10,5 +10,5 @@ class TestGTE(BaseTest):
     encoding_name = "gte"
 
 
-TestGTE.makeAllEqCoefsTests(maxVars = 3, factor = 2)
+# TestGTE.makeAllCardTests(maxVars = 3, factor = 2)
 TestGTE.makeGeneralPBTests()

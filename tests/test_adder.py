@@ -10,5 +10,5 @@ class TestAdder(BaseTest):
     encoding_name = "adder"
 
 
-TestAdder.makeAllEqCoefsTests(maxVars = 3, factor = 2)
+# TestAdder.makeAllCardTests(maxVars = 3, factor = 2)
 TestAdder.makeGeneralPBTests()

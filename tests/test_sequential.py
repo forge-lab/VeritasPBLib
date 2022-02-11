@@ -10,4 +10,4 @@ class TestSequential(BaseTest):
     encoding_name = "sequential"
 
 
-TestSequential.makeAllEqCoefsTests(maxVars = 3)
+TestSequential.makeAllCardTests(maxVars = 3)

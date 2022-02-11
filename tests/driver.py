@@ -142,7 +142,7 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(state, RSResult.UNSAT.value)
 
     @classmethod
-    def makeAllEqCoefsTests(cls, maxVars, factor = 1):
+    def makeAllCardTests(cls, maxVars, factor = 1):
         xs = [Variable(i) for i in range(1,maxVars + 1)]
 
         minVars = 1

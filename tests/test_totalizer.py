@@ -10,4 +10,4 @@ class TestTotalizer(BaseTest):
     encoding_name = "totalizer"
 
 
-TestTotalizer.makeAllEqCoefsTests(maxVars = 3, factor = 1)
+TestTotalizer.makeAllCardTests(maxVars = 3, factor = 1)
