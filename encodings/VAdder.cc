@@ -374,19 +374,19 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
 
   // transform the constraint to consider the smallest rhs
   bool flipped = false;
-  if (current_sign != _PB_EQUAL_) {
-    if (sum - rhs < rhs) {
-      for (int i = 0; i < lits.size(); i++) {
-        lits[i] = ~(lits[i]);
-      }
-      rhs = sum - rhs;
+
+  if (sum - rhs < rhs) {
+    for (int i = 0; i < lits.size(); i++) {
+      lits[i] = ~(lits[i]);
+    }
+    rhs = sum - rhs;
+    if (current_sign != _PB_EQUAL_) {
       if (current_sign == _PB_GREATER_OR_EQUAL_)
         current_sign = _PB_LESS_OR_EQUAL_;
       else
         current_sign = _PB_GREATER_OR_EQUAL_;
-
-      flipped = true;
     }
+    flipped = true;
   }
 
   _output.clear();
