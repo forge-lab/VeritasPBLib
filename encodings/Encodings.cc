@@ -105,7 +105,6 @@ void Encodings::addUnitClause(MaxSATFormula *mx, Constraint *ctr, Lit a) {
   assert(a != lit_Undef);
   assert(var(a) < mx->nVars());
   clause.push(a);
-  mx->incId();
   mx->addHardClause(ctr, clause);
   clause.clear();
 }
@@ -117,7 +116,6 @@ void Encodings::addBinaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a,
   assert(var(a) < mx->nVars() && var(b) < mx->nVars());
   clause.push(a);
   clause.push(b);
-  mx->incId();
   mx->addHardClause(ctr, clause);
   clause.clear();
 }
@@ -130,7 +128,6 @@ void Encodings::addTernaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a,
   clause.push(a);
   clause.push(b);
   clause.push(c);
-  mx->incId();
   mx->addHardClause(ctr, clause);
   clause.clear();
 }
@@ -145,13 +142,11 @@ void Encodings::addQuaternaryClause(MaxSATFormula *mx, Constraint *ctr, Lit a,
   clause.push(b);
   clause.push(c);
   clause.push(d);
-  mx->incId();
   mx->addHardClause(ctr, clause);
   clause.clear();
 }
 
 void Encodings::addClause(MaxSATFormula *mx, Constraint *ctr, vec<Lit> &c) {
-  mx->incId();
   mx->addHardClause(ctr, c);
 }
 

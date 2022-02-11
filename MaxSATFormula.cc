@@ -63,7 +63,7 @@ void MaxSATFormula::addHardClause(Constraint *ctr, vec<Lit> &lits) {
   hard_clauses.push();
   vec<Lit> copy_lits;
   lits.copyTo(copy_lits);
-  new (&hard_clauses[hard_clauses.size() - 1]) Hard(copy_lits, id);
+  new (&hard_clauses[hard_clauses.size() - 1]) Hard(copy_lits, 0);
   n_hard++;
 }
 
