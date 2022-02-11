@@ -3,6 +3,8 @@ import subprocess
 from enum import Enum
 import unittest
 import itertools
+import random
+from copy import copy
 
 from pbcas.ast import Variable, Integer, normalize_by_reduce, Mult, Add, Equals, Geq
 from pbcas.opb_formula import OPBFormula
@@ -218,6 +220,23 @@ class BaseTest(unittest.TestCase):
             cls.makeTest(cls.geq, test_name,
                 [2**j for j in range(maxVars)] + [2**maxVars for j in range(2^maxVars)], xs, k)
 
+        random.seed(42)
+        xs = copy(xs)
+        for i in range(10):
+            test_name = "%s_geq_random_%i"%(cls.encoding_name,i)
+            coeffs = [random.randint(1,10) for j in range(10)]
+            k = random.randint(1,20)
+            random.shuffle(xs)
+            cls.makeTest(cls.geq, test_name,
+                coeffs, copy(xs), k)
+
+        for i in range(10):
+            test_name = "%s_geq_random_large_coeff_%i"%(cls.encoding_name,i)
+            coeffs = [random.randint(1,10)*1000 for j in range(10)]
+            k = random.randint(1,20)*1000
+            random.shuffle(xs)
+            cls.makeTest(cls.geq, test_name,
+                coeffs, copy(xs), k)
 
 
 
