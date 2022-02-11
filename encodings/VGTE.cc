@@ -524,6 +524,10 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
       if (out_list[i].weight <= rhs) {
         addUnitClause(maxsat_formula, pb, out_list[i].lit);
       } else {
+        if (i > 1 && current_sign == _PB_EQUAL_ &&
+            out_list[i - 1].weight != rhs) {
+          addUnitClause(maxsat_formula, pb, out_list[i].lit);
+        }
         break;
       }
     }
