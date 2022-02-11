@@ -149,50 +149,52 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
       buckets[i].push(x_sum);
       FA_extra(maxsat_formula, pb, x_carry, x_sum, x, y, z);
 
-      // proof log the full adder
-      vec<Lit> pb_lits_carry;
-      pb_lits_carry.push(x);
-      pb_lits_carry.push(y);
-      pb_lits_carry.push(z);
-      vec<int64_t> coeffs_carry(3, 1);
-      PB *pb_carry =
-          new PB(pb_lits_carry, coeffs_carry, 2, _PB_GREATER_OR_EQUAL_);
-      pair_carry = reify(pb, x_carry, pb_carry);
+      if (_proof) {
+        vec<Lit> pb_lits_carry;
+        pb_lits_carry.push(x);
+        pb_lits_carry.push(y);
+        pb_lits_carry.push(z);
+        vec<int64_t> coeffs_carry(3, 1);
+        PB *pb_carry =
+            new PB(pb_lits_carry, coeffs_carry, 2, _PB_GREATER_OR_EQUAL_);
+        pair_carry = reify(pb, x_carry, pb_carry);
 
-      vec<Lit> pb_lits_sum;
-      pb_lits_sum.push(x);
-      pb_lits_sum.push(y);
-      pb_lits_sum.push(z);
-      pb_lits_sum.push(~x_carry);
-      vec<int64_t> coeffs_sum(3, 1);
-      coeffs_sum.push(2);
-      PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
-      pair_sum = reify(pb, x_sum, pb_sum);
+        vec<Lit> pb_lits_sum;
+        pb_lits_sum.push(x);
+        pb_lits_sum.push(y);
+        pb_lits_sum.push(z);
+        pb_lits_sum.push(~x_carry);
+        vec<int64_t> coeffs_sum(3, 1);
+        coeffs_sum.push(2);
+        PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
+        pair_sum = reify(pb, x_sum, pb_sum);
 
-      if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-        PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
-        pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
-        pbp_geq->addition(pair_sum.first->_ctrid);
-        pbp_geq->division(3);
-        mx->addProofExpr(pb, pbp_geq);
-        PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
-        pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
-        pbp_geq_sum->addition(current_constr_id_geq);
-        mx->addProofExpr(pb, pbp_geq_sum);
-        current_constr_id_geq = pbp_geq_sum->_ctrid;
-      }
+        if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+          PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
+          pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
+          pbp_geq->addition(pair_sum.first->_ctrid);
+          pbp_geq->division(3);
+          mx->addProofExpr(pb, pbp_geq);
+          PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
+          pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
+          pbp_geq_sum->addition(current_constr_id_geq);
+          mx->addProofExpr(pb, pbp_geq_sum);
+          current_constr_id_geq = pbp_geq_sum->_ctrid;
+        }
 
-      if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-        PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
-        pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
-        pbp_leq->addition(pair_sum.second->_ctrid);
-        pbp_leq->division(3);
-        mx->addProofExpr(pb, pbp_leq);
-        PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
-        pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
-        pbp_leq_sum->addition(current_constr_id_leq);
-        mx->addProofExpr(pb, pbp_leq_sum);
-        current_constr_id_leq = pbp_leq_sum->_ctrid;
+        if (current_sign == _PB_GREATER_OR_EQUAL_ ||
+            current_sign == _PB_EQUAL_) {
+          PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
+          pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
+          pbp_leq->addition(pair_sum.second->_ctrid);
+          pbp_leq->division(3);
+          mx->addProofExpr(pb, pbp_leq);
+          PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
+          pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
+          pbp_leq_sum->addition(current_constr_id_leq);
+          mx->addProofExpr(pb, pbp_leq_sum);
+          current_constr_id_leq = pbp_leq_sum->_ctrid;
+        }
       }
     }
 
@@ -206,48 +208,50 @@ void VAdder::adderTree(MaxSATFormula *maxsat_formula, PB *pb,
       buckets[i + 1].push(x_carry);
       buckets[i].push(x_sum);
 
-      // proof logging for half adder
-      vec<Lit> pb_lits_carry;
-      pb_lits_carry.push(x);
-      pb_lits_carry.push(y);
-      vec<int64_t> coeffs_carry(2, 1);
-      PB *pb_carry =
-          new PB(pb_lits_carry, coeffs_carry, 2, _PB_GREATER_OR_EQUAL_);
-      pair_carry = reify(pb, x_carry, pb_carry);
+      if (_proof) {
+        vec<Lit> pb_lits_carry;
+        pb_lits_carry.push(x);
+        pb_lits_carry.push(y);
+        vec<int64_t> coeffs_carry(2, 1);
+        PB *pb_carry =
+            new PB(pb_lits_carry, coeffs_carry, 2, _PB_GREATER_OR_EQUAL_);
+        pair_carry = reify(pb, x_carry, pb_carry);
 
-      vec<Lit> pb_lits_sum;
-      pb_lits_sum.push(x);
-      pb_lits_sum.push(y);
-      pb_lits_sum.push(~x_carry);
-      vec<int64_t> coeffs_sum(2, 1);
-      coeffs_sum.push(2);
-      PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
-      pair_sum = reify(pb, x_sum, pb_sum);
+        vec<Lit> pb_lits_sum;
+        pb_lits_sum.push(x);
+        pb_lits_sum.push(y);
+        pb_lits_sum.push(~x_carry);
+        vec<int64_t> coeffs_sum(2, 1);
+        coeffs_sum.push(2);
+        PB *pb_sum = new PB(pb_lits_sum, coeffs_sum, 3, _PB_GREATER_OR_EQUAL_);
+        pair_sum = reify(pb, x_sum, pb_sum);
 
-      if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-        PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
-        pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
-        pbp_geq->addition(pair_sum.first->_ctrid);
-        pbp_geq->division(3);
-        mx->addProofExpr(pb, pbp_geq);
-        PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
-        pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
-        pbp_geq_sum->addition(current_constr_id_geq);
-        mx->addProofExpr(pb, pbp_geq_sum);
-        current_constr_id_geq = pbp_geq_sum->_ctrid;
-      }
+        if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+          PBPp *pbp_geq = new PBPp(mx->getIncProofLogId());
+          pbp_geq->multiplication(pair_carry.first->_ctrid, 2);
+          pbp_geq->addition(pair_sum.first->_ctrid);
+          pbp_geq->division(3);
+          mx->addProofExpr(pb, pbp_geq);
+          PBPp *pbp_geq_sum = new PBPp(mx->getIncProofLogId());
+          pbp_geq_sum->multiplication(pbp_geq->_ctrid, 1 << i);
+          pbp_geq_sum->addition(current_constr_id_geq);
+          mx->addProofExpr(pb, pbp_geq_sum);
+          current_constr_id_geq = pbp_geq_sum->_ctrid;
+        }
 
-      if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-        PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
-        pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
-        pbp_leq->addition(pair_sum.second->_ctrid);
-        pbp_leq->division(3);
-        mx->addProofExpr(pb, pbp_leq);
-        PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
-        pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
-        pbp_leq_sum->addition(current_constr_id_leq);
-        mx->addProofExpr(pb, pbp_leq_sum);
-        current_constr_id_leq = pbp_leq_sum->_ctrid;
+        if (current_sign == _PB_GREATER_OR_EQUAL_ ||
+            current_sign == _PB_EQUAL_) {
+          PBPp *pbp_leq = new PBPp(mx->getIncProofLogId());
+          pbp_leq->multiplication(pair_carry.second->_ctrid, 2);
+          pbp_leq->addition(pair_sum.second->_ctrid);
+          pbp_leq->division(3);
+          mx->addProofExpr(pb, pbp_leq);
+          PBPp *pbp_leq_sum = new PBPp(mx->getIncProofLogId());
+          pbp_leq_sum->multiplication(pbp_leq->_ctrid, 1 << i);
+          pbp_leq_sum->addition(current_constr_id_leq);
+          mx->addProofExpr(pb, pbp_leq_sum);
+          current_constr_id_leq = pbp_leq_sum->_ctrid;
+        }
       }
     }
 

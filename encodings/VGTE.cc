@@ -342,10 +342,12 @@ bool VGTE::encodeLeq(uint64_t k, MaxSATFormula *maxsat_formula, PB *pb,
     prev_left_weight = left_list[i].weight;
   }
 
-  std::pair<int, int> res_pair = derive_sparse_unary_sum(
-      maxsat_formula, pb, loutputs, routputs, oliterals);
-  geq.push(res_pair.first);
-  leq.push(res_pair.second);
+  if (_proof) {
+    std::pair<int, int> res_pair = derive_sparse_unary_sum(
+        maxsat_formula, pb, loutputs, routputs, oliterals);
+    geq.push(res_pair.first);
+    leq.push(res_pair.second);
+  }
 
   // k-simplification
   uint64_t max_lit_weight = UINT64_MAX;
@@ -464,36 +466,36 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
               current_sign, geq, leq);
   }
 
-  // begin proof log output
-  if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    if (geq.size() != 0) {
-      PBPp *pbp_output_leq = new PBPp(mx->getIncProofLogId());
-      if (current_sign == _PB_EQUAL_ && !flipped) {
-        pbp_output_leq->addition(pb->_id + 1, geq[0]);
-      } else {
-        pbp_output_leq->addition(pb->_id, geq[0]);
+  if (_proof) {
+    if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+      if (geq.size() != 0) {
+        PBPp *pbp_output_leq = new PBPp(mx->getIncProofLogId());
+        if (current_sign == _PB_EQUAL_ && !flipped) {
+          pbp_output_leq->addition(pb->_id + 1, geq[0]);
+        } else {
+          pbp_output_leq->addition(pb->_id, geq[0]);
+        }
+        for (int i = 1; i < geq.size(); i++) {
+          pbp_output_leq->addition(geq[i]);
+        }
+        mx->addProofExpr(pb, pbp_output_leq);
       }
-      for (int i = 1; i < geq.size(); i++) {
-        pbp_output_leq->addition(geq[i]);
+    }
+    if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
+      if (leq.size() != 0) {
+        PBPp *pbp_output_geq = new PBPp(mx->getIncProofLogId());
+        if (current_sign == _PB_EQUAL_ && flipped) {
+          pbp_output_geq->addition(pb->_id + 1, leq[0]);
+        } else {
+          pbp_output_geq->addition(pb->_id, leq[0]);
+        }
+        for (int i = 1; i < leq.size(); i++) {
+          pbp_output_geq->addition(leq[i]);
+        }
+        mx->addProofExpr(pb, pbp_output_geq);
       }
-      mx->addProofExpr(pb, pbp_output_leq);
     }
   }
-  if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    if (leq.size() != 0) {
-      PBPp *pbp_output_geq = new PBPp(mx->getIncProofLogId());
-      if (current_sign == _PB_EQUAL_ && flipped) {
-        pbp_output_geq->addition(pb->_id + 1, leq[0]);
-      } else {
-        pbp_output_geq->addition(pb->_id, leq[0]);
-      }
-      for (int i = 1; i < leq.size(); i++) {
-        pbp_output_geq->addition(leq[i]);
-      }
-      mx->addProofExpr(pb, pbp_output_geq);
-    }
-  }
-  // end proof log output
 
   weightedlitst out_list = sort_to_list(pb_oliterals);
   if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
