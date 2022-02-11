@@ -107,7 +107,7 @@ void VTotalizer::toCNF(MaxSATFormula *maxsat_formula, Card *card,
   adder(maxsat_formula, card, left, right, lits_out);
 
   // proof log unary sum
-  if (_proof){
+  if (_proof) {
     vec<Lit> lits_in;
     left.copyTo(lits_in);
     for (int i = 0; i < right.size(); i++) {
@@ -138,29 +138,6 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   // would also support PB constraints using the sequential encoding
   coeffs.growTo(lits.size(), 1);
   pb_Sign current_sign = sign;
-
-  // simplifications
-  // all literals must be assigned to 0
-  if (_rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
-    for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, card, ~lits[i]);
-    }
-    return;
-  }
-  // all literals must be assigned to 1
-  if (_rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
-    for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, card, lits[i]);
-    }
-    return;
-  }
-  // constraint is no restriction
-  if (_rhs == n && current_sign == _PB_LESS_OR_EQUAL_) {
-    return;
-  }
-  if (_rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
-    return;
-  }
 
   // transform the constraint to consider the smallest rhs
   bool flipped = false;
@@ -206,7 +183,7 @@ void VTotalizer::encode(Card *card, MaxSATFormula *maxsat_formula,
   }
 
   // proof log fixing output
-  if (_proof){
+  if (_proof) {
     if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
       PBPp *pbp = new PBPp(mx->getIncProofLogId());
       if (current_sign == _PB_EQUAL_ && flipped) {

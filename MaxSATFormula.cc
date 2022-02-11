@@ -166,9 +166,8 @@ Hard &MaxSATFormula::getHardClause(int pos) {
 void MaxSATFormula::addPBConstraint(PB *p) {
 
   // Add constraint to formula data structure.
-  id++; // updates the current id of the constraint
   proof_log_id++;
-  if (p->isEmpty()){
+  if (p->isEmpty()) {
     vec<Lit> empty;
     clause_ids.push(n_hard);
     addHardClause(p, empty);
@@ -198,17 +197,18 @@ void MaxSATFormula::addPBConstraint(PB *p) {
         addHardClause(p, neg_lits);
       }
     } else if (p->isCardinality()) {
-      cardinality_constraints.push(new Card(p->_lits, p->_rhs, p->_sign, id));
+      cardinality_constraints.push(
+          new Card(p->_lits, p->_rhs, p->_sign, proof_log_id));
     } else {
       // if (!p->_sign) {
       //   p->changeSign();
       // }
 
       // TODO: test PB constraints
-      pb_constraints.push(new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign, id));
+      pb_constraints.push(
+          new PB(p->_lits, p->_coeffs, p->_rhs, p->_sign, proof_log_id));
     }
     if (p->_sign == _PB_EQUAL_) {
-      id++;
       proof_log_id++;
     }
   }

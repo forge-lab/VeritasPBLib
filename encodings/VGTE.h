@@ -43,13 +43,15 @@ namespace openwbo {
 class VGTE : public Encodings {
 
 public:
-  VGTE() { current_pb_rhs = 0; }
+  VGTE(bool proof = true) { _proof = proof; }
   ~VGTE() {}
 
   // Encode constraint.
   void encode(PB *pb, MaxSATFormula *maxsat_formula);
 
 protected:
+  bool _proof;
+
   void encode(PB *pb, MaxSATFormula *maxsat_formula, pb_Sign current_sign);
   void encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
               vec<uint64_t> &coeffs, uint64_t rhs, pb_Sign current_sign,
@@ -65,8 +67,6 @@ protected:
 
   vec<Lit> pb_outlits; // Stores the outputs of the pseudo-Boolean constraint
                        // encoding for incremental solving.
-  uint64_t current_pb_rhs; // Stores the current value of the rhs of the
-                           // pseudo-Boolean constraint.
 
   // Stores unit lits. Used for lits that have a coeff larger than rhs.
   wlit_mapt pb_oliterals;

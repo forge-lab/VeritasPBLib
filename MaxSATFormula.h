@@ -92,7 +92,7 @@ public:
   ~Hard() { clause.clear(); }
 
   void printPBPu(std::stringstream &ss, varMap &v) {
-    if (clause.size() == 0){
+    if (clause.size() == 0) {
       ss << "u >= 1 ;\n";
     } else {
       int rhs = 1;
@@ -115,7 +115,7 @@ public:
 
   std::string printPBPu(varMap &v) {
     std::stringstream ss;
-    if (clause.size() == 0){
+    if (clause.size() == 0) {
       ss << "u >= 1 ;\n";
     } else {
       int rhs = 1;
@@ -181,7 +181,6 @@ public:
         max_soft_weight(0) {
     objective_function = NULL;
     format = _FORMAT_MAXSAT_;
-    id = 0;
     proof_log_id = 0;
   }
 
@@ -287,30 +286,14 @@ public:
 
   varMap &getVarMap() { return _varMap; }
 
-  void incId() { id++; }
-
-  int getIncId() {
-    id++;
-    return id;
-  }
-
-  int getId() { return id; }
-
   int getIncProofLogId() {
     proof_log_id++;
     return proof_log_id;
   }
 
-  void bumpIds(){
-    proof_log_id++;
-    id++;
-  }
+  void bumpIds() { proof_log_id++; }
 
-  void decIds(){
-    proof_log_id--;
-    id--;
-  }
-
+  void decIds() { proof_log_id--; }
 
   void bumpProofLogId(int offset) { proof_log_id += offset; }
 

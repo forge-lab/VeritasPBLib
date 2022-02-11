@@ -42,28 +42,6 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
 
   pb_Sign current_sign = sign;
 
-  // simplifications
-  // all literals must be assigned to 0
-  if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
-    for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, card, ~lits[i]);
-    }
-    return;
-  }
-  // all literals must be assigned to 1
-  if (rhs == n && current_sign == _PB_GREATER_OR_EQUAL_) {
-    for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, card, lits[i]);
-    }
-    return;
-  }
-  // constraint is no restriction
-  if (rhs == n && current_sign == _PB_LESS_OR_EQUAL_) {
-    return;
-  }
-  if (rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
-    return;
-  }
 
   // transform the constraint to consider the smallest rhs
   bool flipped = false;

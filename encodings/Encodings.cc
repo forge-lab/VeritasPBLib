@@ -41,17 +41,17 @@ using namespace openwbo;
 void Encodings::encode(Card *card, MaxSATFormula *maxsat_formula, bool proof) {
 
   if (_cardinality_type == _CARD_SEQUENTIAL_) {
-    USequential *seq = new USequential();
-    seq->encode(card, maxsat_formula);
+    USequential seq;
+    seq.encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_TOTALIZER_) {
-    UTotalizer *tot = new UTotalizer();
-    tot->encode(card, maxsat_formula);
+    UTotalizer tot;
+    tot.encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_VSEQUENTIAL_) {
-    VSequential *vseq = new VSequential(proof);
-    vseq->encode(card, maxsat_formula);
+    VSequential seq(proof);
+    seq.encode(card, maxsat_formula);
   } else if (_cardinality_type == _CARD_VTOTALIZER_) {
-    VTotalizer *tot = new VTotalizer(proof);
-    tot->encode(card, maxsat_formula);
+    VTotalizer tot(proof);
+    tot.encode(card, maxsat_formula);
   } else
     assert(false);
 }
@@ -85,17 +85,17 @@ void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula, bool proof) {
   }
 
   if (_pb_type == _PB_GTE_) {
-    UGTE *gte = new UGTE();
-    gte->encode(pb, maxsat_formula);
+    UGTE gte;
+    gte.encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_ADDER_) {
-    UAdder *add = new UAdder();
-    add->encode(pb, maxsat_formula);
+    UAdder add;
+    add.encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_VGTE_) {
-    VGTE *gte = new VGTE();
-    gte->encode(pb, maxsat_formula);
+    VGTE gte(proof);
+    gte.encode(pb, maxsat_formula);
   } else if (_pb_type == _PB_VADDER_) {
-    VAdder *add = new VAdder();
-    add->encode(pb, maxsat_formula);
+    VAdder add(proof);
+    add.encode(pb, maxsat_formula);
   } else
     assert(false);
 }

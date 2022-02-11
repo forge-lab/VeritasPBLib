@@ -349,29 +349,6 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
   }
   uint64_t rhs = pb->_rhs;
 
-  // simplifications
-  // all literals must be assigned to 0
-  if (rhs == 0 && current_sign == _PB_LESS_OR_EQUAL_) {
-    for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, pb, ~lits[i]);
-    }
-    return;
-  }
-  // all literals must be assigned to 1
-  if (rhs == sum && current_sign == _PB_GREATER_OR_EQUAL_) {
-    for (int i = 0; i < lits.size(); i++) {
-      addUnitClause(maxsat_formula, pb, lits[i]);
-    }
-    return;
-  }
-  // constraint is no restriction
-  if (rhs == sum && current_sign == _PB_LESS_OR_EQUAL_) {
-    return;
-  }
-  if (rhs == 0 && current_sign == _PB_GREATER_OR_EQUAL_) {
-    return;
-  }
-
   // transform the constraint to consider the smallest rhs
   bool flipped = false;
 

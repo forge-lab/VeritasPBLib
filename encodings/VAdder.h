@@ -42,12 +42,13 @@ namespace openwbo {
 class VAdder : public Encodings {
 
 public:
-  VAdder() {}
+  VAdder(bool proof = true) { _proof = proof; }
   ~VAdder() {}
 
   void encode(PB *pb, MaxSATFormula *maxsat_formula);
 
 protected:
+  bool _proof;
   vec<Lit> _output;
   vec<Lit> clause;
   std::vector<std::queue<Lit>> _buckets;
