@@ -68,10 +68,18 @@ void Encodings::encode(PB *pb, MaxSATFormula *maxsat_formula, bool proof) {
   }
   pb->_id = pbp_saturate->_ctrid;
 
-  if (pb->_sign != _PB_LESS_OR_EQUAL_) {
+  if (pb->_sign == _PB_GREATER_OR_EQUAL_) {
     for (int i = 0; i < pb->_coeffs.size(); i++) {
       if (pb->_coeffs[i] > pb->_rhs) {
         pb->_coeffs[i] = pb->_rhs;
+      }
+    }
+  }
+
+  if (pb->_sign == _PB_LESS_OR_EQUAL_ || pb->_sign == _PB_EQUAL_) {
+    for (int i = 0; i < pb->_coeffs.size(); i++) {
+      if (pb->_coeffs[i] > pb->_rhs + 1) {
+        pb->_coeffs[i] = pb->_rhs + 1;
       }
     }
   }

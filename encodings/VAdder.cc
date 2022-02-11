@@ -262,18 +262,15 @@ void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
                              vec<Lit> &xs, std::vector<uint64_t> &ys) {
   assert((size_t)xs.size() == ys.size());
   vec<Lit> clause;
-  bool skip;
   for (int i = 0; i < xs.size(); ++i) {
     if (ys[i] == 1 || xs[i] == lit_Undef)
       continue;
 
     clause.clear();
-    skip = false;
     for (int j = i + 1; j < xs.size(); ++j) {
       if (ys[j] == 1) {
         if (xs[j] == lit_Undef) {
-          skip = true;
-          break;
+          continue;
         }
         clause.push(~xs[j]);
       } else {
@@ -283,9 +280,6 @@ void VAdder::lessThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
         clause.push(xs[j]);
       }
     }
-
-    if (skip)
-      continue;
 
     clause.push(~xs[i]);
     addClause(maxsat_formula, pb, clause);
@@ -298,18 +292,15 @@ void VAdder::greaterThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
                                 vec<Lit> &xs, std::vector<uint64_t> &ys) {
   assert((size_t)xs.size() == ys.size());
   vec<Lit> clause;
-  bool skip;
   for (int i = 0; i < xs.size(); ++i) {
-    if (ys[i] == 0 || xs[i] == lit_Undef)
+    if (ys[i] == 0)
       continue;
 
     clause.clear();
-    skip = false;
     for (int j = i + 1; j < xs.size(); ++j) {
       if (ys[j] == 0) {
         if (xs[j] == lit_Undef) {
-          skip = true;
-          break;
+          continue;
         }
         clause.push(xs[j]);
       } else {
@@ -320,10 +311,9 @@ void VAdder::greaterThanOrEqual(MaxSATFormula *maxsat_formula, PB *pb,
       }
     }
 
-    if (skip)
-      continue;
-
-    clause.push(xs[i]);
+    if (xs[i] != lit_Undef) {
+      clause.push(xs[i]);
+    }
     addClause(maxsat_formula, pb, clause);
   }
 }
@@ -384,24 +374,28 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
 
   // transform the constraint to consider the smallest rhs
   bool flipped = false;
-  if (sum - rhs < rhs) {
-    for (int i = 0; i < lits.size(); i++) {
-      lits[i] = ~(lits[i]);
-    }
-    rhs = sum - rhs;
-    if (current_sign != _PB_EQUAL_) {
+  if (current_sign != _PB_EQUAL_) {
+    if (sum - rhs < rhs) {
+      for (int i = 0; i < lits.size(); i++) {
+        lits[i] = ~(lits[i]);
+      }
+      rhs = sum - rhs;
       if (current_sign == _PB_GREATER_OR_EQUAL_)
         current_sign = _PB_LESS_OR_EQUAL_;
       else
         current_sign = _PB_GREATER_OR_EQUAL_;
+
+      flipped = true;
     }
-    flipped = true;
   }
 
   _output.clear();
 
-  assert(rhs > 0 && "log undefined for 0");
+  assert(rhs > 0 && sum - rhs > 0 && "log undefined for 0");
   uint64_t nb = ld64(rhs); // number of bits
+  if (pb->_sign == _PB_EQUAL_ && (sum - rhs) > rhs) {
+    nb = ld64(sum - rhs);
+  }
   Lit u = lit_Undef;
 
   for (uint64_t iBit = 0; iBit <= nb; ++iBit) {
@@ -413,8 +407,10 @@ void VAdder::encode(PB *pb, MaxSATFormula *maxsat_formula,
     }
   }
 
+  _buckets.push_back(std::queue<Lit>());
+  _output.push(u);
   for (int iVar = 0; iVar < lits.size(); ++iVar) {
-    if (((((uint64_t)1) << nb) < coeffs[iVar]))
+    if (((((uint64_t)1) << (nb + 1)) <= coeffs[iVar]))
       _buckets.back().push(lits[iVar]);
   }
 
