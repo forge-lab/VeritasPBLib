@@ -480,28 +480,32 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
 
   // begin proof log output
   if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    PBPp *pbp_output_leq = new PBPp(mx->getIncProofLogId());
-    if (current_sign == _PB_EQUAL_ && !flipped) {
-      pbp_output_leq->addition(pb->_id + 1, geq[0]);
-    } else {
-      pbp_output_leq->addition(pb->_id, geq[0]);
+    if (geq.size() != 0) {
+      PBPp *pbp_output_leq = new PBPp(mx->getIncProofLogId());
+      if (current_sign == _PB_EQUAL_ && !flipped) {
+        pbp_output_leq->addition(pb->_id + 1, geq[0]);
+      } else {
+        pbp_output_leq->addition(pb->_id, geq[0]);
+      }
+      for (int i = 1; i < geq.size(); i++) {
+        pbp_output_leq->addition(geq[i]);
+      }
+      mx->addProofExpr(pb, pbp_output_leq);
     }
-    for (int i = 1; i < geq.size(); i++) {
-      pbp_output_leq->addition(geq[i]);
-    }
-    mx->addProofExpr(pb, pbp_output_leq);
   }
   if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    PBPp *pbp_output_geq = new PBPp(mx->getIncProofLogId());
-    if (current_sign == _PB_EQUAL_ && flipped) {
-      pbp_output_geq->addition(pb->_id + 1, leq[0]);
-    } else {
-      pbp_output_geq->addition(pb->_id, leq[0]);
+    if (leq.size() != 0) {
+      PBPp *pbp_output_geq = new PBPp(mx->getIncProofLogId());
+      if (current_sign == _PB_EQUAL_ && flipped) {
+        pbp_output_geq->addition(pb->_id + 1, leq[0]);
+      } else {
+        pbp_output_geq->addition(pb->_id, leq[0]);
+      }
+      for (int i = 1; i < leq.size(); i++) {
+        pbp_output_geq->addition(leq[i]);
+      }
+      mx->addProofExpr(pb, pbp_output_geq);
     }
-    for (int i = 1; i < leq.size(); i++) {
-      pbp_output_geq->addition(leq[i]);
-    }
-    mx->addProofExpr(pb, pbp_output_geq);
   }
   // end proof log output
 
@@ -516,8 +520,8 @@ void VGTE::encode(MaxSATFormula *maxsat_formula, PB *pb, vec<Lit> &lits,
     }
   }
   if (current_sign == _PB_GREATER_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
-    for (uint i = out_list.size() - 1; i >= 0; i--) {
-      if (out_list[i].weight >= rhs) {
+    for (uint i = 1; i < out_list.size(); i++) {
+      if (out_list[i].weight <= rhs) {
         addUnitClause(maxsat_formula, pb, out_list[i].lit);
       } else {
         break;
