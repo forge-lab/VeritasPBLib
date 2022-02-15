@@ -142,8 +142,8 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(state, RSResult.UNSAT.value)
 
     @classmethod
-    def makeAllCardTests(cls, maxVars, factor = 1):
-        xs = [Variable(i) for i in range(1,maxVars + 1)]
+    def makeAllCardTests(cls, maxVars, factor=1):
+        xs = [Variable(i) for i in range(1, maxVars + 1)]
 
         minVars = 1
 
@@ -151,21 +151,24 @@ class BaseTest(unittest.TestCase):
             for degree in range(maxVars + 1):
                 degree *= factor
                 coeffs = [factor] * numVars
-                test_name = "%s_geq_base_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+                test_name = "%s_geq_base_%i_vars_%i_degree" % (
+                    cls.encoding_name, numVars, degree)
                 cls.makeTest(cls.geq, test_name, coeffs, xs, degree)
 
         for numVars in range(minVars, maxVars + 1):
             for degree in range(maxVars + 1):
                 degree *= factor
                 coeffs = [factor] * numVars
-                test_name = "%s_eq_base_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+                test_name = "%s_eq_base_%i_vars_%i_degree" % (
+                    cls.encoding_name, numVars, degree)
                 cls.makeTest(cls.eq, test_name, coeffs, xs, degree)
 
         for numVars in range(minVars, maxVars + 1):
             for degree in range(-1, maxVars + 1):
                 degree *= factor
                 coeffs = [-factor] * numVars
-                test_name = "%s_geq_neg_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+                test_name = "%s_geq_neg_%i_vars_%i_degree" % (
+                    cls.encoding_name, numVars, degree)
 
                 cls.makeTest(cls.geq, test_name, coeffs, xs, -degree)
 
@@ -173,72 +176,82 @@ class BaseTest(unittest.TestCase):
             for degree in range(-1, maxVars + 1):
                 degree *= factor
                 coeffs = [-factor] * numVars
-                test_name = "%s_eq_neg_%i_vars_%i_degree" % (cls.encoding_name, numVars, degree)
+                test_name = "%s_eq_neg_%i_vars_%i_degree" % (
+                    cls.encoding_name, numVars, degree)
 
                 cls.makeTest(cls.eq, test_name, coeffs, xs, -degree)
 
     @classmethod
     def makeGeneralPBTests(cls):
         maxVars = 10
-        xs = [Variable(i) for i in range(1,maxVars + 1)]
+        xs = [Variable(i) for i in range(1, maxVars + 1)]
 
-        test_name = "%s_geq_saturated_1"%(cls.encoding_name)
+        test_name = "%s_geq_saturated_1" % (cls.encoding_name)
         cls.makeTest(cls.geq, test_name, [10, 2, 2], xs, 5)
 
-        test_name = "%s_eq_saturated_1"%(cls.encoding_name)
+        test_name = "%s_eq_saturated_1" % (cls.encoding_name)
         cls.makeTest(cls.eq, test_name, [10, 2, 2], xs, 5)
 
-        test_name = "%s_geq_propagating_1"%(cls.encoding_name)
+        test_name = "%s_geq_propagating_1" % (cls.encoding_name)
         cls.makeTest(cls.geq, test_name, [-3, -2, -2], xs, -2)
 
-        test_name = "%s_eq_propagating_1"%(cls.encoding_name)
+        test_name = "%s_eq_propagating_1" % (cls.encoding_name)
         cls.makeTest(cls.eq, test_name, [-3, -2, -2], xs, -2)
 
-
         maxVars = 3
         for k in range(2**(maxVars + 1)):
-            test_name = "%s_geq_base_binary_%i"%(cls.encoding_name,k)
-            cls.makeTest(cls.geq, test_name, [2**j for j in range(maxVars) ], xs, k)
+            test_name = "%s_geq_base_binary_%i" % (cls.encoding_name, k)
+            cls.makeTest(cls.geq, test_name, [
+                         2**j for j in range(maxVars)], xs, k)
 
         for k in range(2**(maxVars + 1)):
-            test_name = "%s_eq_base_binary_%i"%(cls.encoding_name,k)
-            cls.makeTest(cls.eq, test_name, [2**j for j in range(maxVars) ], xs, k)
+            test_name = "%s_eq_base_binary_%i" % (cls.encoding_name, k)
+            cls.makeTest(cls.eq, test_name, [
+                         2**j for j in range(maxVars)], xs, k)
 
-        for k in range(-1,2**(maxVars + 1)):
-            test_name = "%s_geq_neg_binary_%i"%(cls.encoding_name,k)
-            cls.makeTest(cls.geq, test_name, [-2**j for j in range(maxVars) ], xs, -k)
-
-        for k in range(-1,2**(maxVars + 1)):
-            test_name = "%s_eq_neg_binary_%i"%(cls.encoding_name,k)
-            cls.makeTest(cls.eq, test_name, [-2**j for j in range(maxVars) ], xs, -k)
-
-
-        maxVars = 3
-        for k in range(2**(maxVars + 1)):
-            test_name = "%s_geq_base_binary_non_binary_%i"%(cls.encoding_name,k)
-             # \sum_{i=1}^{k} 2^i x_i + \sum_{j=1}^{2^k} 2^k y_j >= 2^k + 1
+        for k in range(-1, 2**(maxVars + 1)):
+            test_name = "%s_geq_neg_binary_%i" % (cls.encoding_name, k)
             cls.makeTest(cls.geq, test_name,
-                [2**j for j in range(maxVars)] + [2**maxVars for j in range(2^maxVars)], xs, k)
+                         [-2**j for j in range(maxVars)], xs, -k)
+
+        for k in range(-1, 2**(maxVars + 1)):
+            test_name = "%s_eq_neg_binary_%i" % (cls.encoding_name, k)
+            cls.makeTest(cls.eq, test_name,
+                         [-2**j for j in range(maxVars)], xs, -k)
+
+        maxVars = 3
+        for k in range(2**(maxVars + 1)):
+            test_name = "%s_geq_base_binary_non_binary_%i" % (
+                cls.encoding_name, k)
+            # \sum_{i=1}^{k} 2^i x_i + \sum_{j=1}^{2^k} 2^k y_j >= 2^k + 1
+            cls.makeTest(cls.geq, test_name,
+                         [2**j for j in range(maxVars)] + [2**maxVars for j in range(2 ^ maxVars)], xs, k)
 
         random.seed(42)
         xs = copy(xs)
         for i in range(10):
-            test_name = "%s_geq_random_%i"%(cls.encoding_name,i)
-            coeffs = [random.randint(1,10) for j in range(10)]
-            k = random.randint(1,20)
+            test_name = "%s_geq_random_%i" % (cls.encoding_name, i)
+            coeffs = [random.randint(1, 10) for j in range(10)]
+            k = random.randint(1, 20)
             random.shuffle(xs)
             cls.makeTest(cls.geq, test_name,
-                coeffs, copy(xs), k)
+                         coeffs, copy(xs), k)
 
         for i in range(10):
-            test_name = "%s_geq_random_large_coeff_%i"%(cls.encoding_name,i)
-            coeffs = [random.randint(1,10)*1000 for j in range(10)]
-            k = random.randint(1,20)*1000
+            test_name = "%s_geq_random_large_coeff_%i" % (cls.encoding_name, i)
+            coeffs = [random.randint(1, 10)*1000 for j in range(10)]
+            k = random.randint(1, 20)*1000
             random.shuffle(xs)
             cls.makeTest(cls.geq, test_name,
-                coeffs, copy(xs), k)
+                         coeffs, copy(xs), k)
 
-
+        for i in range(2, 5):
+            test_name = "%s_geq_%i_coeff_3_vars_%i_degree" % (
+                cls.encoding_name, i, i + 1)
+            coeffs = [i, i, i]
+            k = i + 1
+            cls.makeTest(cls.geq, test_name,
+                         coeffs, copy(xs), k)
 
 
 class Driver:
