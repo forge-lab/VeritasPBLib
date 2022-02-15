@@ -227,6 +227,14 @@ class BaseTest(unittest.TestCase):
             cls.makeTest(cls.geq, test_name,
                          [2**j for j in range(maxVars)] + [2**maxVars for j in range(2 ^ maxVars)], xs, k)
 
+        for i in range(2, 5):
+            test_name = "%s_geq_%i_coeff_3_vars_%i_degree" % (
+                cls.encoding_name, i, i + 1)
+            coeffs = [i, i, i]
+            k = i + 1
+            cls.makeTest(cls.geq, test_name,
+                         coeffs, copy(xs), k)
+
         random.seed(42)
         xs = copy(xs)
         for i in range(10):
@@ -242,14 +250,6 @@ class BaseTest(unittest.TestCase):
             coeffs = [random.randint(1, 10)*1000 for j in range(10)]
             k = random.randint(1, 20)*1000
             random.shuffle(xs)
-            cls.makeTest(cls.geq, test_name,
-                         coeffs, copy(xs), k)
-
-        for i in range(2, 5):
-            test_name = "%s_geq_%i_coeff_3_vars_%i_degree" % (
-                cls.encoding_name, i, i + 1)
-            coeffs = [i, i, i]
-            k = i + 1
             cls.makeTest(cls.geq, test_name,
                          coeffs, copy(xs), k)
 
