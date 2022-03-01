@@ -38,5 +38,4 @@ VeritasPBLib
 *.pbp
 
 # Test files
-tests/generated/*
 tests/__pycache__/*
