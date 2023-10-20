@@ -114,11 +114,11 @@ int main(int argc, char **argv) {
            argc == 1 ? "<stdin>" : argv[1]),
         printf("s UNKNOWN\n"), exit(_ERROR_);
 
-  MaxSATFormula *maxsat_formula = new MaxSATFormula();
-  ParserPB *parser_pb = new ParserPB();
-  parser_pb->parsePBFormula(argv[1], maxsat_formula);
-  parser_pb->addUnitClauses();
-  maxsat_formula->setFormat(_FORMAT_PB_);
+  MaxSATFormula maxsat_formula;
+  ParserPB parser_pb;
+  parser_pb.parsePBFormula(argv[1], &maxsat_formula);
+  parser_pb.addUnitClauses();
+  maxsat_formula.setFormat(_FORMAT_PB_);
   gzclose(in);
 
   printf("c |                                                                "
@@ -134,16 +134,16 @@ int main(int argc, char **argv) {
 
   printf("c |  Number of variables:  %12d                                    "
          "                               |\n",
-         maxsat_formula->nVars());
+         maxsat_formula.nVars());
   printf("c |  Number of hard clauses:    %7d                                "
          "                                   |\n",
-         maxsat_formula->nHard());
+         maxsat_formula.nHard());
   printf("c |  Number of cardinality:     %7d                                "
          "                                   |\n",
-         maxsat_formula->nCard());
+         maxsat_formula.nCard());
   printf("c |  Number of PB :             %7d                                "
          "                                   |\n",
-         maxsat_formula->nPB());
+         maxsat_formula.nPB());
   double parsed_time = cpuTime();
 
   printf("c |  Parse time:           %12.2f s                                "
@@ -203,26 +203,26 @@ int main(int argc, char **argv) {
 
   if (!stats) {
 
-    Encodings *encoder = new Encodings(card, pb);
+    Encodings encoder(card, pb);
 
-    for (int i = 0; i < maxsat_formula->nCard(); i++) {
-      Card *c = maxsat_formula->getCardinalityConstraint(i);
-      encoder->encode(c, maxsat_formula, (int)proof==1);
-      maxsat_formula->bumpProofLogId(c->clause_ids.size());
+    for (int i = 0; i < maxsat_formula.nCard(); i++) {
+      Card *c = maxsat_formula.getCardinalityConstraint(i);
+      encoder.encode(c, &maxsat_formula, (int)proof==1);
+      maxsat_formula.bumpProofLogId(c->clause_ids.size());
     }
 
-    for (int i = 0; i < maxsat_formula->nPB(); i++) {
-      PB *p = maxsat_formula->getPBConstraint(i);
-      encoder->encode(p, maxsat_formula, (int)proof==1);
-      maxsat_formula->bumpProofLogId(p->clause_ids.size());
+    for (int i = 0; i < maxsat_formula.nPB(); i++) {
+      PB *p = maxsat_formula.getPBConstraint(i);
+      encoder.encode(p, &maxsat_formula, (int)proof==1);
+      maxsat_formula.bumpProofLogId(p->clause_ids.size());
     }
 
     std::string filename(argv[1]);
     filename = filename.substr(0, filename.find_last_of("."));
 
-    maxsat_formula->printCNFtoFile(filename);
+    maxsat_formula.printCNFtoFile(filename);
     if (proof) {
-      maxsat_formula->printPBPtoFile(filename);
+      maxsat_formula.printPBPtoFile(filename);
     }
 
     std::cout << "c CNF file " << filename << ".cnf" << std::endl;
@@ -232,15 +232,15 @@ int main(int argc, char **argv) {
 
   } else {
 
-    if (maxsat_formula->nCard() > 0) {
+    if (maxsat_formula.nCard() > 0) {
 
       int min = -1;
       int max = -1;
       int avg = 0;
       float ratio = 0.0;
 
-      for (int i = 0; i < maxsat_formula->nCard(); i++) {
-        Card *c = maxsat_formula->getCardinalityConstraint(i);
+      for (int i = 0; i < maxsat_formula.nCard(); i++) {
+        Card *c = maxsat_formula.getCardinalityConstraint(i);
         if (c->_lits.size() < min || min == -1)
           min = c->_lits.size();
         if (c->_lits.size() > max)
@@ -258,13 +258,13 @@ int main(int argc, char **argv) {
       std::cout << "c === Cardinality stats ===" << std::endl;
       std::cout << "c | Card - min size: " << min << std::endl;
       std::cout << "c | Card - max size: " << max << std::endl;
-      std::cout << "c | Card - avg size: " << (avg / maxsat_formula->nCard())
+      std::cout << "c | Card - avg size: " << (avg / maxsat_formula.nCard())
                 << std::endl;
       std::cout << "c | Card - ratio: "
-                << (float)ratio / maxsat_formula->nCard() << std::endl;
+                << (float)ratio / maxsat_formula.nCard() << std::endl;
     }
 
-    if (maxsat_formula->nPB() > 0) {
+    if (maxsat_formula.nPB() > 0) {
 
       int min = -1;
       int max = -1;
@@ -273,8 +273,8 @@ int main(int argc, char **argv) {
       int64_t min_coeff = -1;
       float avg_coeff = 0;
 
-      for (int i = 0; i < maxsat_formula->nPB(); i++) {
-        PB *c = maxsat_formula->getPBConstraint(i);
+      for (int i = 0; i < maxsat_formula.nPB(); i++) {
+        PB *c = maxsat_formula.getPBConstraint(i);
         if (c->_lits.size() < min || min == -1)
           min = c->_lits.size();
         if (c->_lits.size() > max)
@@ -294,12 +294,12 @@ int main(int argc, char **argv) {
       std::cout << "c === PB stats ===" << std::endl;
       std::cout << "c | PB - min size: " << min << std::endl;
       std::cout << "c | PB - max size: " << max << std::endl;
-      std::cout << "c | PB - avg size: " << (avg / maxsat_formula->nPB())
+      std::cout << "c | PB - avg size: " << (avg / maxsat_formula.nPB())
                 << std::endl;
       std::cout << "c | PB - min coeff size: " << min_coeff << std::endl;
       std::cout << "c | PB - max coeff size: " << max_coeff << std::endl;
       std::cout << "c | PB - avg coeff size: "
-                << (avg_coeff / maxsat_formula->nPB()) << std::endl;
+                << (avg_coeff / maxsat_formula.nPB()) << std::endl;
     }
   }
 

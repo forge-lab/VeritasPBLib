@@ -174,6 +174,8 @@ void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula,
   if (current_sign == _PB_LESS_OR_EQUAL_ || current_sign == _PB_EQUAL_) {
     addUnitClause(maxsat_formula, card, ~seq_auxiliary[n - 1][rhs]);
   }
+
+  delete[] seq_auxiliary;
 }
 
 void VSequential::encode(Card *card, MaxSATFormula *maxsat_formula) {

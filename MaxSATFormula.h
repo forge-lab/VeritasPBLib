@@ -194,6 +194,22 @@ public:
     for (int i = 0; i < nHard(); i++)
       hard_clauses[i].clause.clear();
     hard_clauses.clear();
+
+    for (int i = 0; i < cardinality_constraints.size(); i++) {
+      delete cardinality_constraints[i];
+    }
+
+    for (int i = 0; i < pb_constraints.size(); i++) {
+      delete pb_constraints[i];
+    }
+
+    for (int i = 0; i < proof_expr.size(); i++) {
+      delete proof_expr[i];
+    }
+
+    for (int i = 0; i < proof_cls.size(); i++) {
+      delete proof_cls[i];
+    }
   }
 
   // old method - not needed at the moment (needs fixing)
